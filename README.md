@@ -2,7 +2,8 @@
 
 Branch Diff Visualizer is a desktop Electron app for comparing two Git branches and exploring the diff through visual metrics.
 
-<img width="1612" height="1122" alt="Screenshot 2026-02-19 at 23 43 08" src="https://github.com/user-attachments/assets/63e4bdc9-0b86-4e93-a71d-63e69e6fe0f6" />
+<img width="1612" height="1152" alt="Screenshot 2026-02-20 at 14 01 49" src="https://github.com/user-attachments/assets/0c77f63a-2566-4157-91f9-5ad796f24de4" />
+<img width="1612" height="1152" alt="Screenshot 2026-02-20 at 14 01 54" src="https://github.com/user-attachments/assets/6a4062a1-8f40-4542-9621-b5857dcdef5f" />
 
 ## Features
 
