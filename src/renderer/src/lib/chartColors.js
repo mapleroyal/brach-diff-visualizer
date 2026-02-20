@@ -10,11 +10,13 @@ const resolveThemeColor = (token) => `var(--${token})`;
 
 const resolveChartToken = (index) => {
   const sequenceLength = CHART_TOKEN_SEQUENCE.length;
-  const normalizedIndex = ((index % sequenceLength) + sequenceLength) % sequenceLength;
+  const normalizedIndex =
+    ((index % sequenceLength) + sequenceLength) % sequenceLength;
   return CHART_TOKEN_SEQUENCE[normalizedIndex];
 };
 
-const resolveChartColor = (index) => resolveThemeColor(resolveChartToken(index));
+const resolveChartColor = (index) =>
+  resolveThemeColor(resolveChartToken(index));
 
 const chartSemanticColors = {
   added: resolveThemeColor("chart-2"),

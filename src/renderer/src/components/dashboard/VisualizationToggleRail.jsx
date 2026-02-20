@@ -19,9 +19,7 @@ const VisualizationToggleRail = ({ activePanels, onToggle }) => {
               className="flex items-start justify-between gap-3 rounded-md border p-3"
             >
               <div className="min-w-0 space-y-1">
-                <Label htmlFor={switchId} className="cursor-pointer">
-                  {panel.title}
-                </Label>
+                <Label htmlFor={switchId}>{panel.title}</Label>
                 <div className="text-xs text-muted-foreground">
                   {panel.description}
                 </div>

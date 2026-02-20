@@ -70,7 +70,9 @@ const AnalysisSettingsDialog = ({
                 <SelectItem value="working-tree">
                   Working Tree (Saved Changes)
                 </SelectItem>
-                <SelectItem value="branch-tip">Branch Tip (Committed)</SelectItem>
+                <SelectItem value="branch-tip">
+                  Branch Tip (Committed)
+                </SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">

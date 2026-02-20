@@ -218,4 +218,9 @@ const runAnalysis = async (requestInput) => {
     files,
   };
 };
-export { getAnalysisSignature, resolveComparisonRefs, runAnalysis, shouldIgnoreFile };
+export {
+  getAnalysisSignature,
+  resolveComparisonRefs,
+  runAnalysis,
+  shouldIgnoreFile,
+};

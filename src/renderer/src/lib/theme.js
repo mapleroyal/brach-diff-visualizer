@@ -7,7 +7,9 @@ const THEME_MODE_OPTIONS = [
   { value: "dark", label: "Dark" },
 ];
 
-const THEME_MODE_SET = new Set(THEME_MODE_OPTIONS.map((option) => option.value));
+const THEME_MODE_SET = new Set(
+  THEME_MODE_OPTIONS.map((option) => option.value)
+);
 
 const resolveThemeMode = (value) =>
   THEME_MODE_SET.has(value) ? value : DEFAULT_THEME_MODE;
