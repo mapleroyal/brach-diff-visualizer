@@ -73,8 +73,14 @@ const makeApi = (overrides = {}) => ({
   listBranches: vi
     .fn()
     .mockResolvedValue({ ok: true, data: ["main", "feature"] }),
-  runAnalysis: vi.fn().mockResolvedValue({ ok: true, data: analysisFixture }),
-  getAnalysisSignature: vi.fn().mockResolvedValue({ ok: true, data: "stable" }),
+  pollAnalysis: vi.fn().mockResolvedValue({
+    ok: true,
+    data: {
+      signature: "stable",
+      changed: true,
+      result: analysisFixture,
+    },
+  }),
   exportJson: vi.fn().mockResolvedValue({ ok: true, data: "/tmp/export.json" }),
   loadSettingsForRepo: vi.fn().mockResolvedValue({
     ok: true,

@@ -3,10 +3,11 @@ import { writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import simpleGit from "simple-git";
-import { getAnalysisSignature, runAnalysis } from "@main/git/gitAnalyzer";
+import { AnalysisService } from "@main/git/analysisService";
 import { settingsStore } from "@main/persistence/settingsStore";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const analysisService = new AnalysisService();
 
 const toSuccess = (data) => ({ ok: true, data });
 
@@ -111,12 +112,10 @@ app.whenReady().then(() => {
     return [...names].sort((a, b) => a.localeCompare(b));
   });
 
-  registerIpcHandler("analysis:run", async (_event, request) =>
-    runAnalysis(request)
-  );
-
-  registerIpcHandler("analysis:getSignature", async (_event, request) =>
-    getAnalysisSignature(request)
+  registerIpcHandler(
+    "analysis:poll",
+    async (_event, request, previousSignature) =>
+      analysisService.poll(request, previousSignature)
   );
 
   registerIpcHandler("analysis:exportJson", async (_event, payload) => {

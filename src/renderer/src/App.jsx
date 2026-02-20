@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Download,
   FolderOpen,
@@ -6,16 +6,6 @@ import {
   RefreshCw,
   Settings2,
 } from "lucide-react";
-import {
-  DEFAULT_ACTIVE_PANELS,
-  DEFAULT_CANVAS_ORIENTATION,
-  MAX_ACTIVE_PANELS,
-} from "@shared/types";
-import {
-  DEFAULT_ANALYSIS_MODE,
-  DEFAULT_COMPARE_SOURCE,
-} from "@shared/analysisOptions";
-import { DEFAULT_IGNORE_PATTERNS } from "@shared/defaultIgnorePatterns";
 import { Alert, AlertDescription } from "@renderer/components/ui/alert";
 import { Button } from "@renderer/components/ui/button";
 import { Card } from "@renderer/components/ui/card";
@@ -34,9 +24,15 @@ import { IgnorePatternsDialog } from "@renderer/components/dashboard/IgnorePatte
 import { StatCards } from "@renderer/components/dashboard/StatCards";
 import { VisualizationToggleRail } from "@renderer/components/dashboard/VisualizationToggleRail";
 import { SnapCanvas } from "@renderer/components/canvas/SnapCanvas";
+import { useAnalysisPoller } from "@renderer/hooks/useAnalysisPoller";
+import { usePersistedRepoSettings } from "@renderer/hooks/usePersistedRepoSettings";
+import { useRepoWorkspace } from "@renderer/hooks/useRepoWorkspace";
+import {
+  desktopClient,
+  getDesktopClientErrorMessage,
+} from "@renderer/services/desktopClient";
 
 const REPO_PLACEHOLDER = "Pick local repository";
-const AUTO_REFRESH_INTERVAL_MS = 1000;
 
 const BranchSelectField = ({
   id,
@@ -67,35 +63,6 @@ const BranchSelectField = ({
   </div>
 );
 
-const resolveDefaultBaseBranch = (branches) => {
-  if (branches.includes("main")) {
-    return "main";
-  }
-  if (branches.includes("master")) {
-    return "master";
-  }
-  return branches[0] || "";
-};
-
-const resolveBranchSelection = (branches, preferredBase, preferredCompare) => {
-  const fallbackBase = resolveDefaultBaseBranch(branches);
-  const baseBranch =
-    preferredBase && branches.includes(preferredBase)
-      ? preferredBase
-      : fallbackBase;
-
-  let compareBranch =
-    preferredCompare && branches.includes(preferredCompare)
-      ? preferredCompare
-      : branches.find((branch) => branch !== baseBranch) || baseBranch || "";
-
-  if (branches.length > 1 && compareBranch === baseBranch) {
-    compareBranch = branches.find((branch) => branch !== baseBranch) || "";
-  }
-
-  return { baseBranch, compareBranch };
-};
-
 const getRepoName = (repoPath) => {
   if (!repoPath) {
     return "";
@@ -107,87 +74,36 @@ const getRepoName = (repoPath) => {
 };
 
 const App = () => {
-  const [repoPath, setRepoPath] = useState("");
-  const [branches, setBranches] = useState([]);
-  const [baseBranch, setBaseBranch] = useState("");
-  const [compareBranch, setCompareBranch] = useState("");
-  const [mode, setMode] = useState(DEFAULT_ANALYSIS_MODE);
-  const [compareSource, setCompareSource] = useState(DEFAULT_COMPARE_SOURCE);
-  const [ignorePatterns, setIgnorePatterns] = useState([
-    ...DEFAULT_IGNORE_PATTERNS,
-  ]);
-  const [analysis, setAnalysis] = useState();
-  const [panelOrder, setPanelOrder] = useState([...DEFAULT_ACTIVE_PANELS]);
-  const [canvasOrientation, setCanvasOrientation] = useState(
-    DEFAULT_CANVAS_ORIENTATION
-  );
-  const [error, setError] = useState(null);
+  const [localError, setLocalError] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [ignoreDialogOpen, setIgnoreDialogOpen] = useState(false);
-  const [settingsHydrated, setSettingsHydrated] = useState(false);
-  const [refreshCounter, setRefreshCounter] = useState(0);
-  const analysisSignatureRef = useRef(null);
 
-  const repoName = useMemo(() => getRepoName(repoPath), [repoPath]);
-  const repoDisplayWidth = useMemo(() => {
-    const source = repoName || REPO_PLACEHOLDER;
-    return `${source.length + 2}ch`;
-  }, [repoName]);
-
-  const analysisRequest = useMemo(() => {
-    if (!repoPath || !baseBranch || !compareBranch) {
-      return null;
-    }
-
-    return {
-      repoPath,
-      baseBranch,
-      compareBranch,
-      mode,
-      compareSource,
-      ignorePatterns,
-    };
-  }, [
+  const {
     repoPath,
+    branches,
     baseBranch,
     compareBranch,
     mode,
     compareSource,
     ignorePatterns,
-  ]);
+    panelOrder,
+    canvasOrientation,
+    settingsHydrated,
+    analysisRequest,
+    setBaseBranch,
+    setCompareBranch,
+    setMode,
+    setCompareSource,
+    setIgnorePatterns,
+    setCanvasOrientation,
+    pickRepo,
+    refreshRepo,
+    togglePanel,
+  } = useRepoWorkspace();
 
-  const setAppError = useCallback((message) => {
-    setNotice(null);
-    setError(message);
-  }, []);
-
-  const setAppNotice = useCallback((message) => {
-    setError(null);
-    setNotice(message);
-  }, []);
-
-  const saveSettings = useCallback(
-    async (currentRepoPath, settings) => {
-      const response = await window.api.saveSettingsForRepo(
-        currentRepoPath,
-        settings
-      );
-
-      if (!response.ok) {
-        setAppError(response.error);
-      }
-    },
-    [setAppError]
-  );
-
-  useEffect(() => {
-    if (!repoPath || !settingsHydrated) {
-      return;
-    }
-
-    void saveSettings(repoPath, {
+  const persistedSettings = useMemo(
+    () => ({
       ignorePatterns,
       mode,
       compareSource,
@@ -195,170 +111,67 @@ const App = () => {
       compareBranch,
       panelOrder: [...panelOrder],
       canvasOrientation,
-    });
-  }, [
-    repoPath,
-    settingsHydrated,
-    ignorePatterns,
-    mode,
-    compareSource,
-    baseBranch,
-    compareBranch,
-    panelOrder,
-    canvasOrientation,
-    saveSettings,
-  ]);
-
-  const loadRepoContext = useCallback(
-    async (path) => {
-      setSettingsHydrated(false);
-      setError(null);
-      setNotice(null);
-      setAnalysis(undefined);
-
-      const [branchResponse, settingsResponse] = await Promise.all([
-        window.api.listBranches(path),
-        window.api.loadSettingsForRepo(path),
-      ]);
-
-      if (!branchResponse.ok) {
-        setAppError(branchResponse.error);
-        return;
-      }
-
-      if (!settingsResponse.ok) {
-        setAppError(settingsResponse.error);
-        return;
-      }
-
-      const availableBranches = branchResponse.data;
-      const settings = settingsResponse.data;
-
-      setRepoPath(path);
-      setBranches(availableBranches);
-      setMode(settings.mode);
-      setCompareSource(settings.compareSource);
-      setIgnorePatterns(settings.ignorePatterns);
-      setPanelOrder(settings.panelOrder.slice(0, MAX_ACTIVE_PANELS));
-      setCanvasOrientation(
-        settings.canvasOrientation || DEFAULT_CANVAS_ORIENTATION
-      );
-
-      const resolvedBranches = resolveBranchSelection(
-        availableBranches,
-        settings.baseBranch,
-        settings.compareBranch
-      );
-
-      setBaseBranch(resolvedBranches.baseBranch);
-      setCompareBranch(resolvedBranches.compareBranch);
-      setSettingsHydrated(true);
-    },
-    [setAppError]
+    }),
+    [
+      ignorePatterns,
+      mode,
+      compareSource,
+      baseBranch,
+      compareBranch,
+      panelOrder,
+      canvasOrientation,
+    ]
   );
 
-  useEffect(() => {
-    analysisSignatureRef.current = null;
+  const setAppError = useCallback((message) => {
+    setNotice(null);
+    setLocalError(message);
+  }, []);
 
-    if (!analysisRequest || !settingsHydrated) {
-      return;
-    }
+  const setAppNotice = useCallback((message) => {
+    setLocalError(null);
+    setNotice(message);
+  }, []);
 
-    let cancelled = false;
-    let isPolling = false;
+  usePersistedRepoSettings({
+    repoPath,
+    settingsHydrated,
+    settings: persistedSettings,
+    onError: setAppError,
+  });
 
-    const pollSignature = async () => {
-      if (isPolling) {
-        return;
-      }
-
-      isPolling = true;
-      const response = await window.api.getAnalysisSignature(analysisRequest);
-      isPolling = false;
-
-      if (cancelled || !response.ok) {
-        return;
-      }
-
-      const signature = response.data;
-
-      if (analysisSignatureRef.current === null) {
-        analysisSignatureRef.current = signature;
-        return;
-      }
-
-      if (analysisSignatureRef.current !== signature) {
-        analysisSignatureRef.current = signature;
-        setRefreshCounter((current) => current + 1);
-      }
-    };
-
-    void pollSignature();
-
-    const intervalId = window.setInterval(
-      () => void pollSignature(),
-      AUTO_REFRESH_INTERVAL_MS
-    );
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(intervalId);
-    };
-  }, [analysisRequest, settingsHydrated]);
+  const {
+    analysis,
+    isLoading,
+    error: analysisError,
+  } = useAnalysisPoller({
+    analysisRequest,
+    settingsHydrated,
+  });
 
   useEffect(() => {
-    if (!analysisRequest || !settingsHydrated) {
-      if (!analysisRequest) {
-        setAnalysis(undefined);
-      }
-      setIsLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    const run = async () => {
-      setIsLoading(true);
-      setError(null);
+    if (analysisError) {
       setNotice(null);
+    }
+  }, [analysisError]);
 
-      const response = await window.api.runAnalysis(analysisRequest);
+  const error = analysisError || localError;
 
-      if (cancelled) {
-        return;
-      }
-
-      setIsLoading(false);
-
-      if (!response.ok) {
-        setAnalysis(undefined);
-        setAppError(response.error);
-        return;
-      }
-
-      setAnalysis(response.data);
-    };
-
-    void run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [analysisRequest, settingsHydrated, refreshCounter, setAppError]);
+  const repoName = useMemo(() => getRepoName(repoPath), [repoPath]);
+  const repoDisplayWidth = useMemo(() => {
+    const source = repoName || REPO_PLACEHOLDER;
+    return `${source.length + 2}ch`;
+  }, [repoName]);
 
   const handlePickRepo = async () => {
-    const response = await window.api.pickRepo();
+    setNotice(null);
+    setLocalError(null);
 
-    if (!response.ok) {
-      setAppError(response.error);
-      return;
+    try {
+      await pickRepo();
+    } catch (errorValue) {
+      setAppError(getDesktopClientErrorMessage(errorValue));
     }
-
-    if (!response.data) {
-      return;
-    }
-
-    await loadRepoContext(response.data);
   };
 
   const handleRefreshRepo = async () => {
@@ -366,7 +179,14 @@ const App = () => {
       return;
     }
 
-    await loadRepoContext(repoPath);
+    setNotice(null);
+    setLocalError(null);
+
+    try {
+      await refreshRepo();
+    } catch (errorValue) {
+      setAppError(getDesktopClientErrorMessage(errorValue));
+    }
   };
 
   const handleExportJson = async () => {
@@ -374,37 +194,22 @@ const App = () => {
       return;
     }
 
-    const response = await window.api.exportJson({
-      request: analysisRequest,
-      result: analysis,
-    });
+    try {
+      const exportPath = await desktopClient.exportJson({
+        request: analysisRequest,
+        result: analysis,
+      });
 
-    if (!response.ok) {
-      setAppError(response.error);
-      return;
-    }
-
-    if (response.data) {
-      setAppNotice(`JSON exported to ${response.data}`);
+      if (exportPath) {
+        setAppNotice(`JSON exported to ${exportPath}`);
+      }
+    } catch (errorValue) {
+      setAppError(getDesktopClientErrorMessage(errorValue));
     }
   };
 
   const handleOpenIgnorePatterns = () => {
     setIgnoreDialogOpen(true);
-  };
-
-  const handleTogglePanel = (panelId) => {
-    setPanelOrder((current) => {
-      if (current.includes(panelId)) {
-        return current.filter((id) => id !== panelId);
-      }
-
-      if (current.length >= MAX_ACTIVE_PANELS) {
-        return [...current.slice(1), panelId];
-      }
-
-      return [...current, panelId];
-    });
   };
 
   return (
@@ -526,7 +331,7 @@ const App = () => {
       <section className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[320px_1fr]">
         <VisualizationToggleRail
           activePanels={panelOrder}
-          onToggle={handleTogglePanel}
+          onToggle={togglePanel}
         />
         <SnapCanvas
           panelOrder={panelOrder}

@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { defaultSettings, makeApi } from "./fixtures";
+import { analysisFixture, defaultSettings, makeApi } from "./fixtures";
 import { renderApp, selectOption, setWindowApi } from "./testUtils";
 
 describe("App interactions", () => {
@@ -102,7 +102,14 @@ describe("App interactions", () => {
   it("auto refreshes on repo pick, branch changes, and mode changes", async () => {
     const api = makeApi({
       pickRepo: vi.fn().mockResolvedValue({ ok: true, data: "/tmp/repo" }),
-      runAnalysis: vi.fn().mockResolvedValue({ ok: true, data: undefined }),
+      pollAnalysis: vi.fn().mockResolvedValue({
+        ok: true,
+        data: {
+          signature: "stable",
+          changed: true,
+          result: analysisFixture,
+        },
+      }),
       listBranches: vi.fn().mockResolvedValue({
         ok: true,
         data: ["feature", "initial-implementation", "main", "master"],
@@ -136,17 +143,19 @@ describe("App interactions", () => {
     });
 
     await waitFor(() => {
-      expect(api.runAnalysis).toHaveBeenCalled();
+      expect(api.pollAnalysis).toHaveBeenCalled();
     });
 
     await waitFor(() => {
-      expect(api.runAnalysis.mock.calls.at(-1)[0].baseBranch).toBe("main");
+      expect(api.pollAnalysis.mock.calls.at(-1)[0].baseBranch).toBe("main");
     });
 
     await selectOption(/Compare Branch/i, "master");
 
     await waitFor(() => {
-      expect(api.runAnalysis.mock.calls.at(-1)[0].compareBranch).toBe("master");
+      expect(api.pollAnalysis.mock.calls.at(-1)[0].compareBranch).toBe(
+        "master"
+      );
     });
 
     const tipToTipTab = screen.getByRole("tab", { name: /Tip to Tip/i });
@@ -163,7 +172,7 @@ describe("App interactions", () => {
     });
 
     await waitFor(() => {
-      expect(api.runAnalysis.mock.calls.at(-1)[0].mode).toBe("tip-to-tip");
+      expect(api.pollAnalysis.mock.calls.at(-1)[0].mode).toBe("tip-to-tip");
     });
   });
 });
