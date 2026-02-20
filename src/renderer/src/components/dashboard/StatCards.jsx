@@ -57,21 +57,37 @@ const statItems = [
 ];
 
 const StatCards = ({ summary }) => {
+  const hasSummary = Boolean(summary);
+
   return (
-    <section className="grid w-full grid-cols-7 gap-3">
+    <section className="grid w-full grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
       {statItems.map((item) => {
-        const value = summary ? summary[item.key] : 0;
+        const value = hasSummary ? summary[item.key] : null;
         const Icon = item.icon;
 
         return (
-          <Card key={item.key} className={`min-w-0 p-3 ${item.tone.card}`}>
+          <Card
+            key={item.key}
+            className={`min-w-0 p-3 ${
+              hasSummary ? item.tone.card : "border-dashed bg-muted/35"
+            }`}
+          >
             <div className="flex h-full flex-col justify-between">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Icon size={14} className={item.tone.icon} />
+                <Icon
+                  size={14}
+                  className={
+                    hasSummary ? item.tone.icon : "text-muted-foreground"
+                  }
+                />
                 <span className="truncate">{item.label}</span>
               </div>
-              <div className={`mt-2 text-xl font-semibold ${item.tone.value}`}>
-                {formatNumber(value)}
+              <div
+                className={`mt-2 text-xl font-semibold ${
+                  hasSummary ? item.tone.value : "text-muted-foreground"
+                }`}
+              >
+                {hasSummary ? formatNumber(value) : "—"}
               </div>
             </div>
           </Card>

@@ -44,6 +44,7 @@ const resolveBranchSelection = (branches, preferredBase, preferredCompare) => {
 
 const useRepoWorkspace = () => {
   const [repoPath, setRepoPath] = useState("");
+  const [currentBranch, setCurrentBranch] = useState(null);
   const [branches, setBranches] = useState([]);
   const [baseBranch, setBaseBranch] = useState("");
   const [compareBranch, setCompareBranch] = useState("");
@@ -83,9 +84,10 @@ const useRepoWorkspace = () => {
   const loadRepoContext = useCallback(async (path) => {
     setSettingsHydrated(false);
 
-    const [availableBranches, settings] = await Promise.all([
+    const [availableBranches, settings, checkedOutBranch] = await Promise.all([
       desktopClient.listBranches(path),
       desktopClient.loadSettingsForRepo(path),
+      desktopClient.getCurrentBranch(path),
     ]);
 
     const resolvedBranches = resolveBranchSelection(
@@ -95,6 +97,7 @@ const useRepoWorkspace = () => {
     );
 
     setRepoPath(path);
+    setCurrentBranch(checkedOutBranch);
     setBranches(availableBranches);
     setMode(settings.mode);
     setCompareSource(settings.compareSource);
@@ -151,6 +154,7 @@ const useRepoWorkspace = () => {
 
   return {
     repoPath,
+    currentBranch,
     branches,
     baseBranch,
     compareBranch,

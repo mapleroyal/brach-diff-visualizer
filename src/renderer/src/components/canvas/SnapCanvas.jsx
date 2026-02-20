@@ -35,6 +35,7 @@ const SnapCanvas = ({
     () => computeCanvasLayout(panelOrder, resolvedOrientation),
     [panelOrder, resolvedOrientation]
   );
+  const canChangeOrientation = layout.length > 1;
   const gridClassName = useMemo(
     () => resolveCanvasGridClassName(layout.length, resolvedOrientation),
     [layout.length, resolvedOrientation]
@@ -42,18 +43,28 @@ const SnapCanvas = ({
 
   return (
     <Card className="flex h-full min-h-0 flex-col p-3">
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm font-medium">Canvas Layout</div>
         <Tabs value={resolvedOrientation} onValueChange={onOrientationChange}>
-          <TabsList>
+          <TabsList className="w-full sm:w-auto">
             {ORIENTATION_OPTIONS.map((option) => (
-              <TabsTrigger key={option.id} value={option.id}>
+              <TabsTrigger
+                key={option.id}
+                value={option.id}
+                disabled={!canChangeOrientation}
+                className="flex-1 text-xs sm:flex-none sm:text-sm"
+              >
                 {option.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
       </div>
+      {!canChangeOrientation ? (
+        <div className="mb-3 text-xs text-muted-foreground">
+          Enable two visualizations to change split direction.
+        </div>
+      ) : null}
 
       <div className="min-h-0 flex-1">
         {layout.length === 0 ? (

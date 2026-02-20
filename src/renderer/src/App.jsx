@@ -42,6 +42,7 @@ const BranchSelectField = ({
   onValueChange,
   branches,
   placeholder,
+  disabledMessage,
 }) => (
   <div className="space-y-2">
     <Label htmlFor={id}>{label}</Label>
@@ -61,6 +62,9 @@ const BranchSelectField = ({
         ))}
       </SelectContent>
     </Select>
+    {branches.length === 0 && disabledMessage ? (
+      <p className="text-xs text-muted-foreground">{disabledMessage}</p>
+    ) : null}
   </div>
 );
 
@@ -72,6 +76,35 @@ const getRepoName = (repoPath) => {
   const normalized = repoPath.replace(/\\/g, "/").replace(/\/+$/, "");
   const segments = normalized.split("/").filter(Boolean);
   return segments[segments.length - 1] || normalized;
+};
+
+const resolveWorkingTreePreflightMessage = ({
+  settingsHydrated,
+  compareSource,
+  repoPath,
+  baseBranch,
+  compareBranch,
+  currentBranch,
+}) => {
+  if (
+    !settingsHydrated ||
+    compareSource !== "working-tree" ||
+    !repoPath ||
+    !baseBranch ||
+    !compareBranch
+  ) {
+    return null;
+  }
+
+  if (!currentBranch) {
+    return `Working Tree compare requires an active branch checkout. Check out "${compareBranch}", then refresh, or switch Compare Source to Branch Tip in Settings.`;
+  }
+
+  if (currentBranch !== compareBranch) {
+    return `Working Tree compare requires "${compareBranch}" checked out, but the repository is on "${currentBranch}". Check out "${compareBranch}" and refresh, or switch Compare Source to Branch Tip in Settings.`;
+  }
+
+  return null;
 };
 
 const App = () => {
@@ -88,6 +121,7 @@ const App = () => {
 
   const {
     repoPath,
+    currentBranch,
     branches,
     baseBranch,
     compareBranch,
@@ -209,12 +243,35 @@ const App = () => {
     onError: setAppError,
   });
 
+  const workingTreePreflightMessage = useMemo(
+    () =>
+      resolveWorkingTreePreflightMessage({
+        settingsHydrated,
+        compareSource,
+        repoPath,
+        baseBranch,
+        compareBranch,
+        currentBranch,
+      }),
+    [
+      settingsHydrated,
+      compareSource,
+      repoPath,
+      baseBranch,
+      compareBranch,
+      currentBranch,
+    ]
+  );
+  const effectiveAnalysisRequest = workingTreePreflightMessage
+    ? null
+    : analysisRequest;
+
   const {
     analysis,
     isLoading,
     error: analysisError,
   } = useAnalysisPoller({
-    analysisRequest,
+    analysisRequest: effectiveAnalysisRequest,
     settingsHydrated,
   });
 
@@ -225,6 +282,39 @@ const App = () => {
   }, [analysisError]);
 
   const error = analysisError || localError;
+  const branchFieldDisabledMessage = repoPath
+    ? "No branches available for this repository."
+    : "Pick a repository to load branches.";
+  const exportDisabledReason = useMemo(() => {
+    if (analysis) {
+      return null;
+    }
+
+    if (!repoPath) {
+      return "Pick a repository to enable JSON export.";
+    }
+
+    if (!baseBranch || !compareBranch) {
+      return "Select base and compare branches to run a comparison.";
+    }
+
+    if (workingTreePreflightMessage) {
+      return "Resolve working-tree requirements to enable export.";
+    }
+
+    if (isLoading) {
+      return "Waiting for comparison results.";
+    }
+
+    return "Run a comparison to enable JSON export.";
+  }, [
+    analysis,
+    repoPath,
+    baseBranch,
+    compareBranch,
+    workingTreePreflightMessage,
+    isLoading,
+  ]);
 
   const repoName = useMemo(() => getRepoName(repoPath), [repoPath]);
   const repoDisplayWidth = useMemo(() => {
@@ -259,13 +349,13 @@ const App = () => {
   };
 
   const handleExportJson = async () => {
-    if (!analysis || !analysisRequest) {
+    if (!analysis || !effectiveAnalysisRequest) {
       return;
     }
 
     try {
       const exportPath = await desktopClient.exportJson({
-        request: analysisRequest,
+        request: effectiveAnalysisRequest,
         result: analysis,
       });
 
@@ -300,9 +390,9 @@ const App = () => {
   };
 
   return (
-    <main className="flex h-full flex-col gap-3 p-4">
+    <main className="flex h-full min-h-0 flex-col gap-3 overflow-hidden p-4">
       <Card className="p-4">
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(280px,1.5fr)_minmax(180px,1fr)_minmax(180px,1fr)_auto_auto] xl:items-center">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(250px,1.35fr)_minmax(180px,1fr)_minmax(180px,1fr)_auto_auto] lg:items-center">
           <div className="space-y-2">
             <Label htmlFor="repository-path">Repository</Label>
             <div className="flex items-center gap-2">
@@ -322,7 +412,7 @@ const App = () => {
                 title={repoPath || undefined}
                 readOnly
                 className="w-auto"
-                style={{ width: repoDisplayWidth }}
+                style={{ width: repoDisplayWidth, maxWidth: "100%" }}
               />
               <Button
                 type="button"
@@ -344,6 +434,7 @@ const App = () => {
             onValueChange={setBaseBranch}
             branches={branches}
             placeholder="Select base branch"
+            disabledMessage={branchFieldDisabledMessage}
           />
 
           <BranchSelectField
@@ -353,10 +444,11 @@ const App = () => {
             onValueChange={setCompareBranch}
             branches={branches}
             placeholder="Select compare branch"
+            disabledMessage={branchFieldDisabledMessage}
           />
 
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Label>Mode</Label>
               <span
                 className="inline-flex h-4 w-4 items-center justify-center text-muted-foreground"
@@ -379,7 +471,7 @@ const App = () => {
             </Tabs>
           </div>
 
-          <div className="flex flex-col gap-2 xl:justify-self-end">
+          <div className="flex flex-col gap-2 lg:justify-self-end">
             <Button
               variant="secondary"
               onClick={() => setSettingsDialogOpen(true)}
@@ -391,12 +483,18 @@ const App = () => {
             <Button
               variant="secondary"
               onClick={handleExportJson}
-              disabled={!analysis}
+              disabled={Boolean(exportDisabledReason)}
+              title={exportDisabledReason || undefined}
               className="gap-2"
             >
               <Download size={15} />
               Export JSON
             </Button>
+            {exportDisabledReason ? (
+              <p className="max-w-[18rem] text-xs text-muted-foreground">
+                {exportDisabledReason}
+              </p>
+            ) : null}
           </div>
         </div>
       </Card>
@@ -415,7 +513,13 @@ const App = () => {
         </Alert>
       ) : null}
 
-      <section className="grid min-h-0 flex-1 grid-cols-1 gap-3 xl:grid-cols-[320px_1fr]">
+      {!error && !notice && workingTreePreflightMessage ? (
+        <Alert>
+          <AlertDescription>{workingTreePreflightMessage}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <section className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)] lg:grid-rows-1">
         <VisualizationToggleRail
           activePanels={panelOrder}
           onToggle={togglePanel}

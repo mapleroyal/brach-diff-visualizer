@@ -39,6 +39,18 @@ const shouldIgnoreFile = (relativePath, ignorePatterns) => {
   );
 };
 
+const readCurrentBranchName = async (git) => {
+  const currentBranch = (
+    await git.raw(["rev-parse", "--abbrev-ref", "HEAD"])
+  ).trim();
+
+  if (!currentBranch || currentBranch === "HEAD") {
+    return null;
+  }
+
+  return currentBranch;
+};
+
 const resolveComparisonRefs = async (git, baseBranch, compareBranch, mode) => {
   if (mode === "tip-to-tip") {
     return {
@@ -70,11 +82,8 @@ const resolveCompareTarget = async (git, compareBranch, compareSource) => {
     };
   }
 
-  const currentBranch = (
-    await git.raw(["rev-parse", "--abbrev-ref", "HEAD"])
-  ).trim();
-
-  if (!currentBranch || currentBranch === "HEAD") {
+  const currentBranch = await readCurrentBranchName(git);
+  if (!currentBranch) {
     throw new Error(
       "Working tree comparison requires an active branch checkout."
     );
@@ -116,6 +125,7 @@ const readDiffOutputs = async (git, leftRef, rightRef) => {
 };
 
 export {
+  readCurrentBranchName,
   readDiffOutputs,
   resolveCompareTarget,
   resolveComparisonRefs,

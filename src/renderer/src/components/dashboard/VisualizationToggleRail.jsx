@@ -5,10 +5,10 @@ import { PANEL_DEFINITIONS } from "@shared/panels";
 
 const VisualizationToggleRail = ({ activePanels, onToggle }) => {
   return (
-    <Card className="h-full p-4">
+    <Card className="flex min-h-0 flex-col p-4 lg:h-full">
       <div className="mb-4 text-sm font-medium">Visualizations</div>
 
-      <div className="space-y-2">
+      <div className="min-h-0 flex-1 space-y-2 overflow-auto">
         {PANEL_DEFINITIONS.map((panel) => {
           const isActive = activePanels.includes(panel.id);
           const switchId = `toggle-${panel.id}`;

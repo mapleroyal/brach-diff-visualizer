@@ -60,4 +60,30 @@ describe("panel schema", () => {
       cleanup();
     }
   });
+
+  it("resolves treemap tooltip header from payload data", () => {
+    const chartElement = chartRenderers.treemap(
+      [{ name: "src/renderer/src", size: 124 }],
+      { valueKey: "size", valueLabel: "Churn" }
+    );
+    const treemapElement = chartElement.props.children;
+    const tooltipElement = treemapElement.props.children;
+
+    expect(typeof tooltipElement.props.content).toBe("function");
+
+    const tooltipContent = tooltipElement.props.content({
+      active: true,
+      payload: [
+        {
+          value: 124,
+          payload: {
+            name: "src/renderer/src",
+          },
+        },
+      ],
+    });
+
+    expect(tooltipContent.props.label).toBe("src/renderer/src");
+    expect(tooltipContent.props.formatter(124)).toEqual(["124", "Churn"]);
+  });
 });

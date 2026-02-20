@@ -123,6 +123,48 @@ describe("desktopClient.loadLastOpenedRepo", () => {
   });
 });
 
+describe("desktopClient.getCurrentBranch", () => {
+  beforeEach(() => {
+    setWindowApi({});
+  });
+
+  it("loads current branch via git:getCurrentBranch", async () => {
+    const getCurrentBranch = vi.fn().mockResolvedValue({
+      ok: true,
+      data: "feature",
+    });
+    const listBranches = vi.fn();
+
+    setWindowApi({
+      getCurrentBranch,
+      listBranches,
+    });
+
+    const response = await desktopClient.getCurrentBranch("/tmp/repo");
+
+    expect(response).toBe("feature");
+    expect(getCurrentBranch).toHaveBeenCalledWith("/tmp/repo");
+    expect(listBranches).not.toHaveBeenCalled();
+  });
+
+  it("throws a bridge error when getCurrentBranch is unavailable", async () => {
+    const listBranches = vi.fn();
+
+    setWindowApi({
+      listBranches,
+    });
+
+    const error = await desktopClient
+      .getCurrentBranch("/tmp/repo")
+      .catch((value) => value);
+
+    expect(getDesktopClientErrorMessage(error)).toBe(
+      'Desktop bridge method "getCurrentBranch" is unavailable.'
+    );
+    expect(listBranches).not.toHaveBeenCalled();
+  });
+});
+
 describe("desktopClient app settings methods", () => {
   beforeEach(() => {
     setWindowApi({});

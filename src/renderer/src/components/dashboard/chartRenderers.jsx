@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   Cell,
+  DefaultTooltipContent,
   Pie,
   PieChart,
   ReferenceLine,
@@ -117,6 +118,42 @@ const clampLabelFromLeft = (value, maxChars) => {
   }
 
   return `…${text.slice(-(maxChars - 1))}`;
+};
+
+const resolveTreemapTooltipLabel = (label, payload) => {
+  const firstPayloadEntry = Array.isArray(payload) ? payload[0] : void 0;
+  const nestedPayload = firstPayloadEntry?.payload?.payload;
+  const candidateLabels = [
+    firstPayloadEntry?.payload?.name,
+    nestedPayload?.name,
+    firstPayloadEntry?.name,
+    label,
+  ];
+
+  return (
+    candidateLabels.find(
+      (candidate) =>
+        typeof candidate === "string" && candidate.trim().length > 0
+    ) || "Directory"
+  );
+};
+
+const renderTreemapTooltipContent = (tooltipProps, valueLabel) => {
+  const payload = Array.isArray(tooltipProps?.payload)
+    ? tooltipProps.payload
+    : [];
+  if (!tooltipProps?.active || payload.length === 0) {
+    return null;
+  }
+
+  return (
+    <DefaultTooltipContent
+      {...tooltipProps}
+      {...chartTooltipProps}
+      label={resolveTreemapTooltipLabel(tooltipProps.label, payload)}
+      formatter={(value) => [formatNumber(value), valueLabel]}
+    />
+  );
 };
 
 const resolveTreemapNodeFill = (nodeProps, colorPanel) => {
@@ -357,6 +394,7 @@ const renderSingleMetricFileBars = (data, options = {}) => {
 const renderTreemap = (data, options = {}) => {
   const colorPanel = buildTreemapColorScale(data.length);
   const renderTreemapNode = createTreemapNodeRenderer(colorPanel);
+  const valueLabel = options.valueLabel || options.valueKey || "Value";
 
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -371,12 +409,8 @@ const renderTreemap = (data, options = {}) => {
       >
         <Tooltip
           {...chartTooltipProps}
-          formatter={(value) => [
-            formatNumber(value),
-            options.valueLabel || "Value",
-          ]}
-          labelFormatter={(label, payload) =>
-            payload?.[0]?.payload?.name || label || "Directory"
+          content={(tooltipProps) =>
+            renderTreemapTooltipContent(tooltipProps, valueLabel)
           }
         />
       </Treemap>

@@ -73,6 +73,7 @@ const makeApi = (overrides = {}) => ({
   listBranches: vi
     .fn()
     .mockResolvedValue({ ok: true, data: ["main", "feature"] }),
+  getCurrentBranch: vi.fn().mockResolvedValue({ ok: true, data: "feature" }),
   pollAnalysis: vi.fn().mockResolvedValue({
     ok: true,
     data: {

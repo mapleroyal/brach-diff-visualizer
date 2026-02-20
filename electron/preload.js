@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer } from "electron";
 const api = {
   pickRepo: () => ipcRenderer.invoke("repo:pick"),
   listBranches: (repoPath) => ipcRenderer.invoke("git:listBranches", repoPath),
+  getCurrentBranch: (repoPath) =>
+    ipcRenderer.invoke("git:getCurrentBranch", repoPath),
   pollAnalysis: (request, previousSignature) =>
     ipcRenderer.invoke("analysis:poll", request, previousSignature),
   exportJson: (payload) => ipcRenderer.invoke("analysis:exportJson", payload),

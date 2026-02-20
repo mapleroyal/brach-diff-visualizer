@@ -20,6 +20,7 @@ class DesktopClientError extends Error {
 
 const nullableRepoPathSchema = z.string().nullable();
 const branchListSchema = z.array(z.string());
+const currentBranchSchema = z.string().nullable();
 const exportPathSchema = z.string().nullable();
 
 const exportPayloadSchema = z.object({
@@ -129,6 +130,15 @@ const desktopClient = {
       args: [repoPath],
       requestSchema: z.string().min(1),
       responseSchema: branchListSchema,
+    }),
+
+  getCurrentBranch: (repoPath) =>
+    invoke({
+      channel: "git:getCurrentBranch",
+      methodName: "getCurrentBranch",
+      args: [repoPath],
+      requestSchema: z.string().min(1),
+      responseSchema: currentBranchSchema,
     }),
 
   loadSettingsForRepo: (repoPath) =>

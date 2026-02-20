@@ -211,6 +211,7 @@ describe("App interactions", () => {
         ok: true,
         data: {
           ...defaultSettings,
+          compareSource: "branch-tip",
           baseBranch: "",
           compareBranch: "",
         },
@@ -219,6 +220,7 @@ describe("App interactions", () => {
         ok: true,
         data: {
           ...defaultSettings,
+          compareSource: "branch-tip",
           baseBranch: "",
           compareBranch: "",
         },
@@ -267,5 +269,43 @@ describe("App interactions", () => {
     await waitFor(() => {
       expect(api.pollAnalysis.mock.calls.at(-1)[0].mode).toBe("tip-to-tip");
     });
+  });
+
+  it("shows a working-tree preflight warning when compare branch is not checked out", async () => {
+    const api = makeApi({
+      pickRepo: vi.fn().mockResolvedValue({ ok: true, data: "/tmp/repo" }),
+      listBranches: vi
+        .fn()
+        .mockResolvedValue({ ok: true, data: ["feature", "main", "master"] }),
+      getCurrentBranch: vi
+        .fn()
+        .mockResolvedValue({ ok: true, data: "feature" }),
+      loadSettingsForRepo: vi.fn().mockResolvedValue({
+        ok: true,
+        data: {
+          ...defaultSettings,
+          compareSource: "working-tree",
+          baseBranch: "main",
+          compareBranch: "master",
+        },
+      }),
+    });
+
+    setWindowApi(api);
+    renderApp();
+
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: /Pick local repository/i })
+      );
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/requires "master" checked out/i)
+      ).toBeInTheDocument();
+    });
+
+    expect(api.pollAnalysis).not.toHaveBeenCalled();
   });
 });

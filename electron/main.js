@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import simpleGit from "simple-git";
 import { AnalysisService } from "@main/git/analysisService";
+import { readCurrentBranchName } from "@main/git/gitAnalyzer";
 import { settingsStore } from "@main/persistence/settingsStore";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -119,6 +120,11 @@ app.whenReady().then(() => {
     }
 
     return [...names].sort((a, b) => a.localeCompare(b));
+  });
+
+  registerIpcHandler("git:getCurrentBranch", async (_event, repoPath) => {
+    const git = simpleGit(repoPath);
+    return readCurrentBranchName(git);
   });
 
   registerIpcHandler(
