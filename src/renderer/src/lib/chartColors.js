@@ -24,6 +24,11 @@ const chartSemanticColors = {
   removed: resolveThemeColor("chart-5"),
 };
 
+const fileTouchSegmentColors = {
+  added: resolveThemeColor("chart-2"),
+  removed: resolveThemeColor("chart-5"),
+};
+
 const chartUiColors = {
   border: resolveThemeColor("border"),
   foreground: resolveThemeColor("foreground"),
@@ -99,6 +104,7 @@ export {
   buildTreemapColorScale,
   chartSemanticColors,
   chartUiColors,
+  fileTouchSegmentColors,
   resolveChartColor,
   resolveColorWithAlpha,
   resolveThemeColor,

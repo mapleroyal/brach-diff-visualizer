@@ -15,6 +15,7 @@ import {
   buildTreemapColorScale,
   chartSemanticColors,
   chartUiColors,
+  fileTouchSegmentColors,
   resolveChartColor,
   resolveColorWithAlpha,
 } from "@renderer/lib/chartColors";
@@ -37,7 +38,6 @@ const TREEMAP_LABEL_MIN_SIZE = 2;
 const TREEMAP_LABEL_PADDING = 3;
 const FILE_PATH_AXIS_WIDTH = 150;
 const FILE_PATH_LABEL_MAX_CHARS = 24;
-const FILE_CHART_BAR_SIZE = 27;
 
 const resolveTreemapNodeFill = (nodeProps, colorPanel) => {
   if (nodeProps.depth >= 2) {
@@ -148,8 +148,7 @@ const donutChartGeometry = {
   outerRadius: "88%",
 };
 
-const FILE_CHART_MIN_HEIGHT = 240;
-const FILE_CHART_ROW_HEIGHT = 32;
+const FILE_CHART_MIN_ROW_HEIGHT = 28;
 
 const chartAxisProps = {
   axisLine: { stroke: chartUiColors.border },
@@ -182,18 +181,18 @@ const filePathYAxisProps = {
     clampLabelFromLeft(value, FILE_PATH_LABEL_MAX_CHARS),
 };
 
-const resolveFileChartHeight = (rowCount) =>
-  Math.max(FILE_CHART_MIN_HEIGHT, rowCount * FILE_CHART_ROW_HEIGHT);
+const resolveFileChartMinHeight = (rowCount) =>
+  Math.max(0, rowCount * FILE_CHART_MIN_ROW_HEIGHT);
 
 const renderScrollableFileChart = (data, renderChart) => {
-  const chartHeight = resolveFileChartHeight(data.length);
+  const chartMinHeight = resolveFileChartMinHeight(data.length);
 
   return (
     <div className="h-full overflow-auto pr-1">
       <div
+        className="h-full"
         style={{
-          height: `${chartHeight}px`,
-          minHeight: `${chartHeight}px`,
+          minHeight: `${chartMinHeight}px`,
         }}
       >
         {renderChart()}
@@ -268,14 +267,12 @@ const renderFileTouchSegments = (data) =>
         <Bar
           dataKey="removed"
           stackId="lines"
-          barSize={FILE_CHART_BAR_SIZE}
-          fill={chartSemanticColors.removed}
+          fill={fileTouchSegmentColors.removed}
         />
         <Bar
           dataKey="added"
           stackId="lines"
-          barSize={FILE_CHART_BAR_SIZE}
-          fill={chartSemanticColors.added}
+          fill={fileTouchSegmentColors.added}
         />
       </BarChart>
     </ResponsiveContainer>
@@ -288,7 +285,7 @@ const renderTopFilesChurn = (data) =>
         <XAxis type="number" {...chartAxisProps} />
         <YAxis {...filePathYAxisProps} {...chartAxisProps} />
         <Tooltip {...chartTooltipProps} />
-        <Bar dataKey="churn" barSize={FILE_CHART_BAR_SIZE}>
+        <Bar dataKey="churn">
           {data.map((entry, index) => (
             <Cell
               key={`${entry.path}-${index}`}
