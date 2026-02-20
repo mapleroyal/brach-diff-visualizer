@@ -11,30 +11,26 @@ import {
   YAxis,
 } from "recharts";
 import { PANEL_MAP } from "@shared/panels";
+import {
+  buildTreemapColorScale,
+  chartSemanticColors,
+  chartUiColors,
+  resolveChartColor,
+  resolveColorWithAlpha,
+} from "@renderer/lib/chartColors";
 
-const CHART_COLOR_SEQUENCE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14];
 const formatNumber = (value) => new Intl.NumberFormat("en-US").format(value);
 
-const resolveChartColor = (index) =>
-  `hsl(var(--chart-${CHART_COLOR_SEQUENCE[index % CHART_COLOR_SEQUENCE.length]}))`;
-
-const semanticChartColors = {
-  added: "hsl(var(--chart-1))",
-  removed: "hsl(var(--chart-5))",
-  changed: "hsl(var(--chart-7))",
-  net: "hsl(var(--chart-2))",
-};
-
 const lineImpactColors = {
-  Added: semanticChartColors.added,
-  Removed: semanticChartColors.removed,
-  Net: semanticChartColors.net,
+  Added: chartSemanticColors.added,
+  Removed: chartSemanticColors.removed,
+  Net: chartSemanticColors.net,
 };
 
 const fileStatusColors = {
-  added: semanticChartColors.added,
-  removed: semanticChartColors.removed,
-  changed: semanticChartColors.changed,
+  added: chartSemanticColors.added,
+  removed: chartSemanticColors.removed,
+  changed: chartSemanticColors.changed,
 };
 
 const TREEMAP_LABEL_MIN_SIZE = 2;
@@ -42,36 +38,6 @@ const TREEMAP_LABEL_PADDING = 3;
 const FILE_PATH_AXIS_WIDTH = 150;
 const FILE_PATH_LABEL_MAX_CHARS = 24;
 const FILE_CHART_BAR_SIZE = 27;
-
-const TREEMAP_RED_GREEN_STOPS = [
-  "hsl(var(--chart-14) / 0.96)",
-  "hsl(var(--chart-14) / 0.82)",
-  "hsl(var(--chart-5) / 0.92)",
-  "hsl(var(--chart-5) / 0.78)",
-  "hsl(var(--chart-6) / 0.86)",
-  "hsl(var(--chart-6) / 0.72)",
-  "hsl(var(--chart-1) / 0.76)",
-  "hsl(var(--chart-13) / 0.9)",
-  "hsl(var(--chart-13) / 0.76)",
-  "hsl(var(--chart-1) / 0.92)",
-];
-
-const buildTreemapColorPanel = (segmentCount) => {
-  if (segmentCount <= 0) {
-    return [];
-  }
-
-  if (segmentCount === 1) {
-    return [TREEMAP_RED_GREEN_STOPS[0]];
-  }
-
-  const maxStopIndex = TREEMAP_RED_GREEN_STOPS.length - 1;
-  return Array.from({ length: segmentCount }, (_, index) => {
-    const ratio = index / (segmentCount - 1);
-    const stopIndex = Math.round(ratio * maxStopIndex);
-    return TREEMAP_RED_GREEN_STOPS[stopIndex];
-  });
-};
 
 const resolveTreemapNodeFill = (nodeProps, colorPanel) => {
   if (nodeProps.depth >= 2) {
@@ -86,7 +52,7 @@ const resolveTreemapNodeFill = (nodeProps, colorPanel) => {
     return nodeProps.fill;
   }
 
-  return resolveChartColor(nodeProps.index || 0);
+  return resolveColorWithAlpha(resolveChartColor(nodeProps.index || 0), 0.9);
 };
 
 const clampTreemapLabel = (label, width, fontSize) => {
@@ -148,7 +114,7 @@ const createTreemapNodeRenderer = (colorPanel) => (nodeProps) => {
         width={width}
         height={height}
         fill={fill}
-        stroke={nodeProps.stroke || "hsl(var(--border))"}
+        stroke={nodeProps.stroke || chartUiColors.border}
       />
       {showLabel ? (
         <>
@@ -165,7 +131,7 @@ const createTreemapNodeRenderer = (colorPanel) => (nodeProps) => {
             y={y + TREEMAP_LABEL_PADDING + fontSize}
             fontSize={fontSize}
             clipPath={`url(#${clipId})`}
-            fill="hsl(var(--foreground))"
+            fill={chartUiColors.foreground}
             pointerEvents="none"
           >
             {labelText}
@@ -186,23 +152,23 @@ const FILE_CHART_MIN_HEIGHT = 240;
 const FILE_CHART_ROW_HEIGHT = 32;
 
 const chartAxisProps = {
-  axisLine: { stroke: "hsl(var(--border))" },
-  tickLine: { stroke: "hsl(var(--border))" },
-  tick: { fill: "hsl(var(--muted-foreground))" },
+  axisLine: { stroke: chartUiColors.border },
+  tickLine: { stroke: chartUiColors.border },
+  tick: { fill: chartUiColors.mutedForeground },
 };
 
 const chartTooltipProps = {
   contentStyle: {
-    backgroundColor: "hsl(var(--popover))",
-    borderColor: "hsl(var(--border))",
+    backgroundColor: chartUiColors.popover,
+    borderColor: chartUiColors.border,
     borderRadius: "var(--radius)",
-    color: "hsl(var(--popover-foreground))",
+    color: chartUiColors.popoverForeground,
   },
   itemStyle: {
-    color: "hsl(var(--popover-foreground))",
+    color: chartUiColors.popoverForeground,
   },
   labelStyle: {
-    color: "hsl(var(--muted-foreground))",
+    color: chartUiColors.mutedForeground,
   },
 };
 
@@ -251,7 +217,7 @@ const renderFileStatusDonut = (data) => (
         nameKey="name"
         innerRadius="56%"
         {...donutChartGeometry}
-        stroke="hsl(var(--border))"
+        stroke={chartUiColors.border}
       >
         {data.map((entry, index) => (
           <Cell
@@ -303,13 +269,13 @@ const renderFileTouchSegments = (data) =>
           dataKey="removed"
           stackId="lines"
           barSize={FILE_CHART_BAR_SIZE}
-          fill={semanticChartColors.removed}
+          fill={chartSemanticColors.removed}
         />
         <Bar
           dataKey="added"
           stackId="lines"
           barSize={FILE_CHART_BAR_SIZE}
-          fill={semanticChartColors.added}
+          fill={chartSemanticColors.added}
         />
       </BarChart>
     </ResponsiveContainer>
@@ -326,7 +292,7 @@ const renderTopFilesChurn = (data) =>
           {data.map((entry, index) => (
             <Cell
               key={`${entry.path}-${index}`}
-              fill={resolveChartColor(index + 6)}
+              fill={resolveChartColor(index)}
             />
           ))}
         </Bar>
@@ -335,7 +301,7 @@ const renderTopFilesChurn = (data) =>
   ));
 
 const renderDirectoryTreemap = (data) => {
-  const colorPanel = buildTreemapColorPanel(data.length);
+  const colorPanel = buildTreemapColorScale(data.length);
   const renderTreemapNode = createTreemapNodeRenderer(colorPanel);
 
   return (
@@ -345,7 +311,7 @@ const renderDirectoryTreemap = (data) => {
         dataKey="size"
         nameKey="name"
         colorPanel={colorPanel}
-        stroke="hsl(var(--border))"
+        stroke={chartUiColors.border}
         content={renderTreemapNode}
       >
         <Tooltip
@@ -369,12 +335,12 @@ const renderExtensionBreakdown = (data) => (
         nameKey="name"
         innerRadius="52%"
         {...donutChartGeometry}
-        stroke="hsl(var(--border))"
+        stroke={chartUiColors.border}
       >
         {data.map((entry, index) => (
           <Cell
             key={`${entry.name}-${index}`}
-            fill={resolveChartColor(index + 4)}
+            fill={resolveChartColor(index + 1)}
           />
         ))}
       </Pie>
@@ -393,7 +359,7 @@ const renderChurnHistogram = (data) => (
         {data.map((entry, index) => (
           <Cell
             key={`${entry.bucket}-${index}`}
-            fill={resolveChartColor(index + 10)}
+            fill={resolveChartColor(index)}
           />
         ))}
       </Bar>

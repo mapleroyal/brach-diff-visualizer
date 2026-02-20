@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 import { Button } from "@renderer/components/ui/button";
 import {
   Dialog,
@@ -15,6 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@renderer/components/ui/select";
+import {
+  DEFAULT_THEME_MODE,
+  THEME_MODE_OPTIONS,
+  resolveThemeMode,
+} from "@renderer/lib/theme";
 
 const AnalysisSettingsDialog = ({
   open,
@@ -23,10 +30,23 @@ const AnalysisSettingsDialog = ({
   onEditIgnorePatterns,
   onClose,
 }) => {
+  const { theme, setTheme } = useTheme();
+  const [themeReady, setThemeReady] = useState(false);
+
+  useEffect(() => {
+    setThemeReady(true);
+  }, []);
+
+  const activeThemeMode = resolveThemeMode(theme);
+
   const handleOpenChange = (nextOpen) => {
     if (!nextOpen) {
       onClose();
     }
+  };
+
+  const handleThemeModeChange = (nextThemeMode) => {
+    setTheme(resolveThemeMode(nextThemeMode));
   };
 
   return (
@@ -68,6 +88,29 @@ const AnalysisSettingsDialog = ({
             >
               Edit Ignore Patterns
             </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="theme-mode">Theme</Label>
+            <Select
+              value={themeReady ? activeThemeMode : DEFAULT_THEME_MODE}
+              onValueChange={handleThemeModeChange}
+              disabled={!themeReady}
+            >
+              <SelectTrigger id="theme-mode">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {THEME_MODE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              System follows your operating system preference.
+            </p>
           </div>
         </div>
 

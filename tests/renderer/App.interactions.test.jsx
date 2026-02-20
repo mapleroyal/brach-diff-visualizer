@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "@renderer/App";
+import { ThemeProvider } from "@renderer/components/theme-provider";
 
 const analysisFixture = {
   resolvedRefs: {
@@ -102,8 +103,18 @@ const selectOption = async (label, option) => {
   });
 };
 
+const renderApp = () =>
+  render(
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
+  );
+
 describe("App interactions", () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    document.documentElement.className = "";
+
     Object.defineProperty(window, "api", {
       writable: true,
       value: makeApi(),
@@ -111,7 +122,7 @@ describe("App interactions", () => {
   });
 
   it("deactivates and reactivates visualization toggles", async () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.queryAllByText("Line Impact Bars").length).toBe(2);
 
@@ -131,7 +142,7 @@ describe("App interactions", () => {
   });
 
   it("shows replacement modal when enabling a 3rd chart", async () => {
-    render(<App />);
+    renderApp();
 
     fireEvent.click(
       screen.getByRole("switch", { name: /Top Files by Churn/i })
@@ -145,18 +156,18 @@ describe("App interactions", () => {
   });
 
   it("keeps export disabled until analysis exists", () => {
-    render(<App />);
+    renderApp();
     const exportButton = screen.getByRole("button", { name: /Export JSON/i });
     expect(exportButton).toBeDisabled();
   });
 
   it("removes the manual compare button", () => {
-    render(<App />);
+    renderApp();
     expect(screen.queryByRole("button", { name: /^Compare$/i })).toBeNull();
   });
 
   it("defaults to left-right canvas orientation and allows switching", async () => {
-    render(<App />);
+    renderApp();
 
     const leftRightTab = screen.getByRole("tab", {
       name: /Left \/ Right/i,
@@ -214,7 +225,7 @@ describe("App interactions", () => {
       value: api,
     });
 
-    render(<App />);
+    renderApp();
 
     await act(async () => {
       fireEvent.click(

@@ -8,6 +8,7 @@ import {
   PieChart,
 } from "lucide-react";
 import { Card } from "@renderer/components/ui/card";
+import { statCardToneClasses } from "@renderer/lib/chartColors";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US").format(value);
 
@@ -16,71 +17,43 @@ const statItems = [
     key: "linesAdded",
     label: "Lines Added",
     icon: BarChart3,
-    tone: {
-      card: "border-[hsl(var(--chart-1)/0.45)] bg-[hsl(var(--chart-1)/0.08)]",
-      icon: "text-[hsl(var(--chart-1))]",
-      value: "text-[hsl(var(--chart-1))]",
-    },
+    tone: statCardToneClasses.linesAdded,
   },
   {
     key: "linesRemoved",
     label: "Lines Removed",
     icon: Activity,
-    tone: {
-      card: "border-[hsl(var(--chart-5)/0.45)] bg-[hsl(var(--chart-5)/0.08)]",
-      icon: "text-[hsl(var(--chart-5))]",
-      value: "text-[hsl(var(--chart-5))]",
-    },
+    tone: statCardToneClasses.linesRemoved,
   },
   {
     key: "linesNet",
     label: "Net Lines",
     icon: GitCompare,
-    tone: {
-      card: "border-[hsl(var(--chart-2)/0.45)] bg-[hsl(var(--chart-2)/0.08)]",
-      icon: "text-[hsl(var(--chart-2))]",
-      value: "text-[hsl(var(--chart-2))]",
-    },
+    tone: statCardToneClasses.linesNet,
   },
   {
     key: "totalTouched",
     label: "Files Touched",
     icon: FolderTree,
-    tone: {
-      card: "border-[hsl(var(--chart-6)/0.45)] bg-[hsl(var(--chart-6)/0.08)]",
-      icon: "text-[hsl(var(--chart-6))]",
-      value: "text-[hsl(var(--chart-6))]",
-    },
+    tone: statCardToneClasses.totalTouched,
   },
   {
     key: "filesAdded",
     label: "Files Added",
     icon: GitBranch,
-    tone: {
-      card: "border-[hsl(var(--chart-13)/0.45)] bg-[hsl(var(--chart-13)/0.08)]",
-      icon: "text-[hsl(var(--chart-13))]",
-      value: "text-[hsl(var(--chart-13))]",
-    },
+    tone: statCardToneClasses.filesAdded,
   },
   {
     key: "filesRemoved",
     label: "Files Removed",
     icon: PieChart,
-    tone: {
-      card: "border-[hsl(var(--chart-14)/0.45)] bg-[hsl(var(--chart-14)/0.08)]",
-      icon: "text-[hsl(var(--chart-14))]",
-      value: "text-[hsl(var(--chart-14))]",
-    },
+    tone: statCardToneClasses.filesRemoved,
   },
   {
     key: "filesChanged",
     label: "Files Changed",
     icon: FileBarChart2,
-    tone: {
-      card: "border-[hsl(var(--chart-7)/0.45)] bg-[hsl(var(--chart-7)/0.08)]",
-      icon: "text-[hsl(var(--chart-7))]",
-      value: "text-[hsl(var(--chart-7))]",
-    },
+    tone: statCardToneClasses.filesChanged,
   },
 ];
 
