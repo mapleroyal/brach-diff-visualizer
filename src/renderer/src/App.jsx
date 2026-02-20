@@ -344,7 +344,6 @@ const App = () => {
   };
 
   const handleOpenIgnorePatterns = () => {
-    setSettingsDialogOpen(false);
     setIgnoreDialogOpen(true);
   };
 
