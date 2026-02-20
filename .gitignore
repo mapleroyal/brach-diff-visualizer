@@ -1,0 +1,71 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+out/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Test coverage
+coverage/
+
+# IDE/Editor
+.vscode/
+
+# Claude Code local settings
+.claude/
+.codex/
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.log
+pnpm-debug.log*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# build directories
+ios/
+android/
+
+app-example
+
+# editor temp files
+*.swp
+*.swo
+*~
+
+# IDE/Editor (additional)
+.idea/
+
+# AI files
+repomix.config.json
+AGENTS.md
+CLAUDE.md

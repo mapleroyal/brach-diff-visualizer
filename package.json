@@ -1,0 +1,79 @@
+{
+  "name": "diff-visualizer",
+  "productName": "Branch Diff Visualizer",
+  "version": "0.1.0",
+  "description": "Electron Branch Diff Dashboard",
+  "license": "MIT",
+  "author": "mapleroyal",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mapleroyal/brach-diff-visualizer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mapleroyal/brach-diff-visualizer/issues"
+  },
+  "homepage": "https://github.com/mapleroyal/brach-diff-visualizer#readme",
+  "type": "module",
+  "main": "out/main/main.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "dist": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
+    "dist:mac": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "dist:mac:app": "npm run build && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac --dir",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "preview": "electron-vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "build": {
+    "appId": "com.branchdiffvisualizer.app",
+    "productName": "Branch Diff Visualizer",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    }
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "electron-store": "^11.0.2",
+    "lucide-react": "^0.552.0",
+    "minimatch": "^10.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.3.0",
+    "simple-git": "^3.30.0",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@vitejs/plugin-react": "^5.0.3",
+    "autoprefixer": "^10.4.21",
+    "electron": "^38.1.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^4.0.0",
+    "eslint": "^10.0.0",
+    "globals": "^17.3.0",
+    "jsdom": "^27.0.0",
+    "postcss": "^8.5.6",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4"
+  }
+}
