@@ -3,6 +3,7 @@ import {
   analysisPollResponseSchema,
   analysisRequestSchema,
   analysisResultSchema,
+  appSettingsSchema,
   repoSettingsSchema,
 } from "@shared/ipcContracts";
 
@@ -17,7 +18,7 @@ class DesktopClientError extends Error {
   }
 }
 
-const pickRepoSchema = z.string().nullable();
+const nullableRepoPathSchema = z.string().nullable();
 const branchListSchema = z.array(z.string());
 const exportPathSchema = z.string().nullable();
 
@@ -99,56 +100,26 @@ const invoke = async ({
   }
 };
 
-const isMissingPollHandlerError = (error) => {
-  if (!(error instanceof DesktopClientError)) {
-    return false;
-  }
-
-  const message = `${error.message || ""}`;
-  return (
-    message.includes('No handler registered for "analysis:poll"') ||
-    message.includes("No handler registered for 'analysis:poll'") ||
-    message.includes('Desktop bridge method "pollAnalysis" is unavailable.')
-  );
-};
-
-const pollWithLegacyApi = async (request, previousSignature) => {
-  const signature = await invoke({
-    channel: "analysis:getSignature",
-    methodName: "getAnalysisSignature",
-    args: [request],
-    requestSchema: analysisRequestSchema,
-    responseSchema: z.string(),
-  });
-
-  if (previousSignature && previousSignature === signature) {
-    return analysisPollResponseSchema.parse({
-      signature,
-      changed: false,
-    });
-  }
-
-  const result = await invoke({
-    channel: "analysis:run",
-    methodName: "runAnalysis",
-    args: [request],
-    requestSchema: analysisRequestSchema,
-    responseSchema: analysisResultSchema,
-  });
-
-  return analysisPollResponseSchema.parse({
-    signature,
-    changed: true,
-    result,
-  });
-};
-
 const desktopClient = {
   pickRepo: () =>
     invoke({
       channel: "repo:pick",
       methodName: "pickRepo",
-      responseSchema: pickRepoSchema,
+      responseSchema: nullableRepoPathSchema,
+    }),
+
+  loadLastOpenedRepo: () =>
+    invoke({
+      channel: "settings:loadLastOpenedRepo",
+      methodName: "loadLastOpenedRepo",
+      responseSchema: nullableRepoPathSchema,
+    }),
+
+  loadAppSettings: () =>
+    invoke({
+      channel: "settings:loadAppSettings",
+      methodName: "loadAppSettings",
+      responseSchema: appSettingsSchema,
     }),
 
   listBranches: (repoPath) =>
@@ -180,25 +151,25 @@ const desktopClient = {
       responseSchema: repoSettingsSchema,
     }),
 
+  saveAppSettings: (settings) =>
+    invoke({
+      channel: "settings:saveAppSettings",
+      methodName: "saveAppSettings",
+      args: [appSettingsSchema.parse(settings)],
+      responseSchema: appSettingsSchema,
+    }),
+
   pollAnalysis: async (request, previousSignature) => {
     const parsedRequest = analysisRequestSchema.parse(request);
     const parsedPreviousSignature =
       previousSignature == null ? null : z.string().parse(previousSignature);
 
-    try {
-      return await invoke({
-        channel: "analysis:poll",
-        methodName: "pollAnalysis",
-        args: [parsedRequest, parsedPreviousSignature],
-        responseSchema: analysisPollResponseSchema,
-      });
-    } catch (error) {
-      if (isMissingPollHandlerError(error)) {
-        return pollWithLegacyApi(parsedRequest, parsedPreviousSignature);
-      }
-
-      throw error;
-    }
+    return invoke({
+      channel: "analysis:poll",
+      methodName: "pollAnalysis",
+      args: [parsedRequest, parsedPreviousSignature],
+      responseSchema: analysisPollResponseSchema,
+    });
   },
 
   exportJson: (payload) =>
@@ -222,9 +193,4 @@ const getDesktopClientErrorMessage = (error) => {
   return "Unexpected error";
 };
 
-export {
-  DesktopClientError,
-  desktopClient,
-  getDesktopClientErrorMessage,
-  invoke,
-};
+export { desktopClient, getDesktopClientErrorMessage };

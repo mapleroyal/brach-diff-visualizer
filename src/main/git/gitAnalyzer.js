@@ -116,8 +116,6 @@ const readDiffOutputs = async (git, leftRef, rightRef) => {
 };
 
 export {
-  createDiffArgs,
-  matchesIgnorePattern,
   readDiffOutputs,
   resolveCompareTarget,
   resolveComparisonRefs,

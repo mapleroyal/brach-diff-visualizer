@@ -35,4 +35,4 @@ const usePersistedRepoSettings = ({
   }, [onError, repoPath, settings, settingsHydrated]);
 };
 
-export { SETTINGS_PERSIST_DEBOUNCE_MS, usePersistedRepoSettings };
+export { usePersistedRepoSettings };

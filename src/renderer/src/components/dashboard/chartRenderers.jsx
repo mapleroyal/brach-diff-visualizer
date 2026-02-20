@@ -103,13 +103,7 @@ const clampTreemapLabel = (label, width, fontSize) => {
   const usableWidth = Math.max(1, width - TREEMAP_LABEL_PADDING * 2);
   const approximateCharWidth = Math.max(1, fontSize * 0.58);
   const maxChars = Math.max(1, Math.floor(usableWidth / approximateCharWidth));
-  if (text.length <= maxChars) {
-    return text;
-  }
-
-  return maxChars > 1
-    ? `${text.slice(0, maxChars - 1)}…`
-    : text.slice(0, maxChars);
+  return clampLabelFromLeft(text, maxChars);
 };
 
 const clampLabelFromLeft = (value, maxChars) => {
@@ -186,7 +180,9 @@ const createTreemapNodeRenderer = (colorPanel) => (nodeProps) => {
             y={y + TREEMAP_LABEL_PADDING + fontSize}
             fontSize={fontSize}
             clipPath={`url(#${clipId})`}
-            fill={chartUiColors.foreground}
+            fill={chartUiColors.treemapLabel}
+            stroke="none"
+            strokeWidth={0}
             pointerEvents="none"
           >
             {labelText}

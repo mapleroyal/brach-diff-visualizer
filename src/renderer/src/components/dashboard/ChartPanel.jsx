@@ -39,4 +39,4 @@ const ChartPanel = ({ panelId, analysis }) => {
   return renderChart(data, panelDefinition.chartOptions || {});
 };
 
-export { ChartPanel, EmptyState };
+export { ChartPanel };

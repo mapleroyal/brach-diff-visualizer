@@ -89,4 +89,4 @@ const useAnalysisPoller = ({
   return { signature, analysis, isLoading, error };
 };
 
-export { AUTO_REFRESH_INTERVAL_MS, useAnalysisPoller };
+export { useAnalysisPoller };

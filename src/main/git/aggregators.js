@@ -92,8 +92,8 @@ const buildDatasets = (files, summary) => {
     .sort((a, b) => b.churn - a.churn || a.path.localeCompare(b.path))
     .slice(0, 15)
     .map((file) => ({ path: file.path, churn: file.churn }));
-  const directoryMap = /* @__PURE__ */ new Map();
-  const extensionMap = /* @__PURE__ */ new Map();
+  const directoryMap = new Map();
+  const extensionMap = new Map();
   for (const file of files) {
     directoryMap.set(
       file.directory,

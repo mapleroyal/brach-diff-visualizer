@@ -40,6 +40,15 @@ const sanitizeBranchForFilename = (value) =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "") || "branch";
 
+const isValidGitRepoPath = async (repoPath) => {
+  try {
+    const git = simpleGit(repoPath);
+    return await git.checkIsRepo();
+  } catch {
+    return false;
+  }
+};
+
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1500,
@@ -73,13 +82,13 @@ app.whenReady().then(() => {
     }
 
     const repoPath = result.filePaths[0];
-    const git = simpleGit(repoPath);
-    const isRepo = await git.checkIsRepo();
+    const isRepo = await isValidGitRepoPath(repoPath);
 
     if (!isRepo) {
       throw new Error("Selected directory is not a Git repository.");
     }
 
+    settingsStore.saveLastOpenedRepo(repoPath);
     return repoPath;
   });
 
@@ -164,10 +173,33 @@ app.whenReady().then(() => {
     settingsStore.loadForRepo(repoPath)
   );
 
+  registerIpcHandler("settings:loadAppSettings", async () =>
+    settingsStore.loadAppSettings()
+  );
+
+  registerIpcHandler("settings:loadLastOpenedRepo", async () => {
+    const lastOpenedRepoPath = settingsStore.loadLastOpenedRepo();
+    if (!lastOpenedRepoPath) {
+      return null;
+    }
+
+    const isRepo = await isValidGitRepoPath(lastOpenedRepoPath);
+    if (!isRepo) {
+      settingsStore.clearLastOpenedRepo();
+      return null;
+    }
+
+    return lastOpenedRepoPath;
+  });
+
   registerIpcHandler(
     "settings:saveForRepo",
     async (_event, repoPath, settings) =>
       settingsStore.saveForRepo(repoPath, settings)
+  );
+
+  registerIpcHandler("settings:saveAppSettings", async (_event, settings) =>
+    settingsStore.saveAppSettings(settings)
   );
 
   createWindow();

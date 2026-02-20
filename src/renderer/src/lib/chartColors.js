@@ -34,6 +34,7 @@ const fileTouchSegmentColors = {
 const chartUiColors = {
   border: resolveThemeColor("border"),
   foreground: resolveThemeColor("foreground"),
+  treemapLabel: "oklch(0.985 0 0)",
   mutedForeground: resolveThemeColor("muted-foreground"),
   popover: resolveThemeColor("popover"),
   popoverForeground: resolveThemeColor("popover-foreground"),
@@ -109,6 +110,5 @@ export {
   fileTouchSegmentColors,
   resolveChartColor,
   resolveColorWithAlpha,
-  resolveThemeColor,
   statCardToneClasses,
 };

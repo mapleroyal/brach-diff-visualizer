@@ -5,8 +5,12 @@ const api = {
   pollAnalysis: (request, previousSignature) =>
     ipcRenderer.invoke("analysis:poll", request, previousSignature),
   exportJson: (payload) => ipcRenderer.invoke("analysis:exportJson", payload),
+  loadAppSettings: () => ipcRenderer.invoke("settings:loadAppSettings"),
+  loadLastOpenedRepo: () => ipcRenderer.invoke("settings:loadLastOpenedRepo"),
   loadSettingsForRepo: (repoPath) =>
     ipcRenderer.invoke("settings:loadForRepo", repoPath),
+  saveAppSettings: (settings) =>
+    ipcRenderer.invoke("settings:saveAppSettings", settings),
   saveSettingsForRepo: (repoPath, settings) =>
     ipcRenderer.invoke("settings:saveForRepo", repoPath, settings),
 };

@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@renderer/components/ui/select";
+import { Switch } from "@renderer/components/ui/switch";
 import {
   DEFAULT_THEME_MODE,
   THEME_MODE_OPTIONS,
@@ -27,6 +28,9 @@ const AnalysisSettingsDialog = ({
   open,
   compareSource,
   onCompareSourceChange,
+  autoOpenLastRepoOnStartup,
+  onAutoOpenLastRepoOnStartupChange,
+  isAutoOpenLastRepoOnStartupUpdating,
   onEditIgnorePatterns,
   onClose,
 }) => {
@@ -90,6 +94,26 @@ const AnalysisSettingsDialog = ({
             >
               Edit Ignore Patterns
             </Button>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="auto-open-last-repo">
+                  Reopen last repository on launch
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Automatically restores your most recently opened repository
+                  when the app starts.
+                </p>
+              </div>
+              <Switch
+                id="auto-open-last-repo"
+                checked={autoOpenLastRepoOnStartup}
+                onCheckedChange={onAutoOpenLastRepoOnStartupChange}
+                disabled={isAutoOpenLastRepoOnStartupUpdating}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

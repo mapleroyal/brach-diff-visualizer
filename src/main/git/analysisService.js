@@ -242,8 +242,4 @@ class AnalysisService {
   }
 }
 
-export {
-  AnalysisService,
-  DEFAULT_RESULT_CACHE_LIMIT,
-  DEFAULT_SNAPSHOT_CACHE_LIMIT,
-};
+export { AnalysisService };

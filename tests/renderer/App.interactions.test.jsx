@@ -60,14 +60,20 @@ describe("App interactions", () => {
     });
   });
 
-  it("keeps export disabled until analysis exists", () => {
+  it("keeps export disabled until analysis exists", async () => {
     renderApp();
+    await waitFor(() => {
+      expect(window.api.loadAppSettings).toHaveBeenCalledTimes(1);
+    });
     const exportButton = screen.getByRole("button", { name: /Export JSON/i });
     expect(exportButton).toBeDisabled();
   });
 
-  it("removes the manual compare button", () => {
+  it("removes the manual compare button", async () => {
     renderApp();
+    await waitFor(() => {
+      expect(window.api.loadAppSettings).toHaveBeenCalledTimes(1);
+    });
     expect(screen.queryByRole("button", { name: /^Compare$/i })).toBeNull();
   });
 
@@ -96,6 +102,93 @@ describe("App interactions", () => {
       expect(
         screen.getByRole("tab", { name: /Top \/ Bottom/i })
       ).toHaveAttribute("aria-selected", "true");
+    });
+  });
+
+  it("opens the last opened repo on startup when available", async () => {
+    const api = makeApi({
+      loadLastOpenedRepo: vi
+        .fn()
+        .mockResolvedValue({ ok: true, data: "/tmp/repo" }),
+    });
+
+    setWindowApi(api);
+    renderApp();
+
+    await waitFor(() => {
+      expect(api.loadLastOpenedRepo).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(api.listBranches).toHaveBeenCalledWith("/tmp/repo");
+      expect(api.loadSettingsForRepo).toHaveBeenCalledWith("/tmp/repo");
+    });
+
+    await waitFor(() => {
+      expect(api.pollAnalysis).toHaveBeenCalled();
+    });
+
+    expect(screen.getByDisplayValue("repo")).toBeInTheDocument();
+  });
+
+  it("skips reopening the last repo when startup restore is disabled", async () => {
+    const api = makeApi({
+      loadAppSettings: vi.fn().mockResolvedValue({
+        ok: true,
+        data: { autoOpenLastRepoOnStartup: false },
+      }),
+      loadLastOpenedRepo: vi
+        .fn()
+        .mockResolvedValue({ ok: true, data: "/tmp/repo" }),
+    });
+
+    setWindowApi(api);
+    renderApp();
+
+    await waitFor(() => {
+      expect(api.loadAppSettings).toHaveBeenCalledTimes(1);
+    });
+
+    expect(api.loadLastOpenedRepo).not.toHaveBeenCalled();
+    expect(api.listBranches).not.toHaveBeenCalled();
+  });
+
+  it("allows toggling startup repo restore from settings", async () => {
+    const api = makeApi({
+      loadAppSettings: vi.fn().mockResolvedValue({
+        ok: true,
+        data: { autoOpenLastRepoOnStartup: false },
+      }),
+      saveAppSettings: vi.fn().mockResolvedValue({
+        ok: true,
+        data: { autoOpenLastRepoOnStartup: true },
+      }),
+    });
+
+    setWindowApi(api);
+    renderApp();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Settings$/i }));
+
+    const startupToggle = await screen.findByRole("switch", {
+      name: /Reopen last repository on launch/i,
+    });
+
+    await waitFor(() => {
+      expect(startupToggle).toBeEnabled();
+      expect(startupToggle).toHaveAttribute("aria-checked", "false");
+    });
+
+    fireEvent.click(startupToggle);
+
+    await waitFor(() => {
+      expect(api.saveAppSettings).toHaveBeenCalledWith({
+        autoOpenLastRepoOnStartup: true,
+      });
+    });
+
+    await waitFor(() => {
+      expect(startupToggle).toHaveAttribute("aria-checked", "true");
     });
   });
 

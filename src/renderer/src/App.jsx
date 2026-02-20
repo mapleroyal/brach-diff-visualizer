@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   FolderOpen,
@@ -27,6 +27,7 @@ import { SnapCanvas } from "@renderer/components/canvas/SnapCanvas";
 import { useAnalysisPoller } from "@renderer/hooks/useAnalysisPoller";
 import { usePersistedRepoSettings } from "@renderer/hooks/usePersistedRepoSettings";
 import { useRepoWorkspace } from "@renderer/hooks/useRepoWorkspace";
+import { makeDefaultAppSettings } from "@shared/appSettings";
 import {
   desktopClient,
   getDesktopClientErrorMessage,
@@ -78,6 +79,12 @@ const App = () => {
   const [notice, setNotice] = useState(null);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [ignoreDialogOpen, setIgnoreDialogOpen] = useState(false);
+  const [appSettings, setAppSettings] = useState(() =>
+    makeDefaultAppSettings()
+  );
+  const [appSettingsHydrated, setAppSettingsHydrated] = useState(false);
+  const [isSavingAppSettings, setIsSavingAppSettings] = useState(false);
+  const startupRepoRestoreAttemptedRef = useRef(false);
 
   const {
     repoPath,
@@ -98,6 +105,7 @@ const App = () => {
     setIgnorePatterns,
     setCanvasOrientation,
     pickRepo,
+    openLastRepo,
     refreshRepo,
     togglePanel,
   } = useRepoWorkspace();
@@ -132,6 +140,67 @@ const App = () => {
     setLocalError(null);
     setNotice(message);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAppSettings = async () => {
+      try {
+        const loadedAppSettings = await desktopClient.loadAppSettings();
+        if (!cancelled) {
+          setAppSettings(loadedAppSettings);
+        }
+      } catch (errorValue) {
+        if (!cancelled) {
+          setAppError(getDesktopClientErrorMessage(errorValue));
+        }
+      } finally {
+        if (!cancelled) {
+          setAppSettingsHydrated(true);
+        }
+      }
+    };
+
+    void loadAppSettings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setAppError]);
+
+  useEffect(() => {
+    if (!appSettingsHydrated || startupRepoRestoreAttemptedRef.current) {
+      return;
+    }
+
+    startupRepoRestoreAttemptedRef.current = true;
+    if (!appSettings.autoOpenLastRepoOnStartup) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const initializeRepo = async () => {
+      try {
+        await openLastRepo();
+      } catch (errorValue) {
+        if (!cancelled) {
+          setAppError(getDesktopClientErrorMessage(errorValue));
+        }
+      }
+    };
+
+    void initializeRepo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    appSettings.autoOpenLastRepoOnStartup,
+    appSettingsHydrated,
+    openLastRepo,
+    setAppError,
+  ]);
 
   usePersistedRepoSettings({
     repoPath,
@@ -210,6 +279,24 @@ const App = () => {
 
   const handleOpenIgnorePatterns = () => {
     setIgnoreDialogOpen(true);
+  };
+
+  const handleAutoOpenLastRepoOnStartupChange = async (enabled) => {
+    setNotice(null);
+    setLocalError(null);
+    setIsSavingAppSettings(true);
+
+    try {
+      const savedSettings = await desktopClient.saveAppSettings({
+        ...appSettings,
+        autoOpenLastRepoOnStartup: enabled,
+      });
+      setAppSettings(savedSettings);
+    } catch (errorValue) {
+      setAppError(getDesktopClientErrorMessage(errorValue));
+    } finally {
+      setIsSavingAppSettings(false);
+    }
   };
 
   return (
@@ -345,6 +432,13 @@ const App = () => {
         open={settingsDialogOpen}
         compareSource={compareSource}
         onCompareSourceChange={setCompareSource}
+        autoOpenLastRepoOnStartup={appSettings.autoOpenLastRepoOnStartup}
+        onAutoOpenLastRepoOnStartupChange={
+          handleAutoOpenLastRepoOnStartupChange
+        }
+        isAutoOpenLastRepoOnStartupUpdating={
+          !appSettingsHydrated || isSavingAppSettings
+        }
         onEditIgnorePatterns={handleOpenIgnorePatterns}
         onClose={() => setSettingsDialogOpen(false)}
       />

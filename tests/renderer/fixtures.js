@@ -82,9 +82,18 @@ const makeApi = (overrides = {}) => ({
     },
   }),
   exportJson: vi.fn().mockResolvedValue({ ok: true, data: "/tmp/export.json" }),
+  loadAppSettings: vi.fn().mockResolvedValue({
+    ok: true,
+    data: { autoOpenLastRepoOnStartup: true },
+  }),
+  loadLastOpenedRepo: vi.fn().mockResolvedValue({ ok: true, data: null }),
   loadSettingsForRepo: vi.fn().mockResolvedValue({
     ok: true,
     data: defaultSettings,
+  }),
+  saveAppSettings: vi.fn().mockResolvedValue({
+    ok: true,
+    data: { autoOpenLastRepoOnStartup: true },
   }),
   saveSettingsForRepo: vi.fn().mockResolvedValue({
     ok: true,

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ANALYSIS_MODES, COMPARE_SOURCES } from "./analysisOptions";
-import { CANVAS_ORIENTATIONS, PANEL_IDS } from "./types";
+import { CANVAS_ORIENTATIONS, MAX_ACTIVE_PANELS, PANEL_IDS } from "./types";
+import { DEFAULT_AUTO_OPEN_LAST_REPO_ON_STARTUP } from "./appSettings";
 
 const fileStatusSchema = z.enum(["added", "removed", "changed"]);
 
@@ -22,6 +23,18 @@ const analysisSummarySchema = z.object({
   filesChanged: z.number().int(),
   totalTouched: z.number().int(),
 });
+
+const uniquePanelOrderSchema = z
+  .array(z.enum(PANEL_IDS))
+  .max(MAX_ACTIVE_PANELS)
+  .superRefine((panelOrder, context) => {
+    if (panelOrder.length !== new Set(panelOrder).size) {
+      context.addIssue({
+        code: "custom",
+        message: "Panel order must contain unique panel IDs.",
+      });
+    }
+  });
 
 const datasetRowSchema = z.record(z.string(), z.any());
 
@@ -79,14 +92,20 @@ const repoSettingsSchema = z.object({
   compareSource: z.enum(COMPARE_SOURCES),
   baseBranch: z.string(),
   compareBranch: z.string(),
-  panelOrder: z.array(z.enum(PANEL_IDS)),
+  panelOrder: uniquePanelOrderSchema,
   canvasOrientation: z.enum(CANVAS_ORIENTATIONS),
+});
+
+const appSettingsSchema = z.object({
+  autoOpenLastRepoOnStartup: z
+    .boolean()
+    .default(DEFAULT_AUTO_OPEN_LAST_REPO_ON_STARTUP),
 });
 
 export {
   analysisPollResponseSchema,
   analysisRequestSchema,
   analysisResultSchema,
-  analysisSummarySchema,
+  appSettingsSchema,
   repoSettingsSchema,
 };

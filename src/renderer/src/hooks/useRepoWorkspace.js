@@ -99,10 +99,8 @@ const useRepoWorkspace = () => {
     setMode(settings.mode);
     setCompareSource(settings.compareSource);
     setIgnorePatterns(settings.ignorePatterns);
-    setPanelOrder(settings.panelOrder.slice(0, MAX_ACTIVE_PANELS));
-    setCanvasOrientation(
-      settings.canvasOrientation || DEFAULT_CANVAS_ORIENTATION
-    );
+    setPanelOrder(settings.panelOrder);
+    setCanvasOrientation(settings.canvasOrientation);
     setBaseBranch(resolvedBranches.baseBranch);
     setCompareBranch(resolvedBranches.compareBranch);
     setSettingsHydrated(true);
@@ -116,6 +114,16 @@ const useRepoWorkspace = () => {
 
     await loadRepoContext(selectedRepoPath);
     return selectedRepoPath;
+  }, [loadRepoContext]);
+
+  const openLastRepo = useCallback(async () => {
+    const lastOpenedRepoPath = await desktopClient.loadLastOpenedRepo();
+    if (!lastOpenedRepoPath) {
+      return null;
+    }
+
+    await loadRepoContext(lastOpenedRepoPath);
+    return lastOpenedRepoPath;
   }, [loadRepoContext]);
 
   const refreshRepo = useCallback(async () => {
@@ -160,9 +168,10 @@ const useRepoWorkspace = () => {
     setIgnorePatterns,
     setCanvasOrientation,
     pickRepo,
+    openLastRepo,
     refreshRepo,
     togglePanel,
   };
 };
 
-export { resolveBranchSelection, resolveDefaultBaseBranch, useRepoWorkspace };
+export { useRepoWorkspace };

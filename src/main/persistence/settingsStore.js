@@ -2,17 +2,14 @@ import Store from "electron-store";
 import {
   DEFAULT_ACTIVE_PANELS,
   DEFAULT_CANVAS_ORIENTATION,
-  MAX_ACTIVE_PANELS,
-  PANEL_IDS,
-  isValidCanvasOrientation,
 } from "@shared/types";
 import {
   DEFAULT_ANALYSIS_MODE,
   DEFAULT_COMPARE_SOURCE,
-  isValidAnalysisMode,
-  isValidCompareSource,
 } from "@shared/analysisOptions";
+import { makeDefaultAppSettings } from "@shared/appSettings";
 import { DEFAULT_IGNORE_PATTERNS } from "@shared/defaultIgnorePatterns";
+import { appSettingsSchema, repoSettingsSchema } from "@shared/ipcContracts";
 
 const makeDefaultSettings = () => ({
   ignorePatterns: [...DEFAULT_IGNORE_PATTERNS],
@@ -24,70 +21,13 @@ const makeDefaultSettings = () => ({
   canvasOrientation: DEFAULT_CANVAS_ORIENTATION,
 });
 
-const sanitizePanelOrder = (input) => {
-  if (!Array.isArray(input)) {
-    return [...DEFAULT_ACTIVE_PANELS];
+const normalizeRepoPath = (value) => {
+  if (typeof value !== "string") {
+    return null;
   }
 
-  const deduped = [];
-
-  for (const panelId of input) {
-    if (PANEL_IDS.includes(panelId) && !deduped.includes(panelId)) {
-      deduped.push(panelId);
-    }
-
-    if (deduped.length >= MAX_ACTIVE_PANELS) {
-      break;
-    }
-  }
-
-  return deduped;
-};
-
-const sanitizeIgnorePatterns = (input) => {
-  if (!Array.isArray(input)) {
-    return [...DEFAULT_IGNORE_PATTERNS];
-  }
-
-  return input.map((pattern) => pattern.trim()).filter(Boolean);
-};
-
-const sanitizeMode = (value) => {
-  if (isValidAnalysisMode(value)) {
-    return value;
-  }
-
-  return DEFAULT_ANALYSIS_MODE;
-};
-
-const sanitizeCompareSource = (value) => {
-  if (isValidCompareSource(value)) {
-    return value;
-  }
-
-  return DEFAULT_COMPARE_SOURCE;
-};
-
-const ensureSettings = (settings) => {
-  if (!settings || typeof settings !== "object") {
-    return makeDefaultSettings();
-  }
-
-  const defaults = makeDefaultSettings();
-
-  return {
-    ignorePatterns: sanitizeIgnorePatterns(settings.ignorePatterns),
-    mode: sanitizeMode(settings.mode),
-    compareSource: sanitizeCompareSource(settings.compareSource),
-    baseBranch:
-      typeof settings.baseBranch === "string" ? settings.baseBranch : "",
-    compareBranch:
-      typeof settings.compareBranch === "string" ? settings.compareBranch : "",
-    panelOrder: sanitizePanelOrder(settings.panelOrder),
-    canvasOrientation: isValidCanvasOrientation(settings.canvasOrientation)
-      ? settings.canvasOrientation
-      : defaults.canvasOrientation,
-  };
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 };
 
 class SettingsStore {
@@ -98,27 +38,69 @@ class SettingsStore {
       name: "repo-scoped-settings",
       defaults: {
         repos: {},
+        lastOpenedRepoPath: null,
+        appSettings: makeDefaultAppSettings(),
       },
     });
   }
 
   loadForRepo(repoPath) {
     const repos = this.store.get("repos");
-    const settings = ensureSettings(repos[repoPath]);
-    this.saveForRepo(repoPath, settings);
-    return settings;
+    const existingSettings = repos?.[repoPath];
+
+    if (existingSettings === undefined) {
+      const defaults = makeDefaultSettings();
+      return this.saveForRepo(repoPath, defaults);
+    }
+
+    return repoSettingsSchema.parse(existingSettings);
   }
 
   saveForRepo(repoPath, settings) {
     const repos = this.store.get("repos");
-    const merged = ensureSettings(settings);
+    const parsedSettings = repoSettingsSchema.parse(settings);
 
     this.store.set("repos", {
       ...repos,
-      [repoPath]: merged,
+      [repoPath]: parsedSettings,
     });
 
-    return merged;
+    return parsedSettings;
+  }
+
+  loadLastOpenedRepo() {
+    return normalizeRepoPath(this.store.get("lastOpenedRepoPath"));
+  }
+
+  saveLastOpenedRepo(repoPath) {
+    const parsedRepoPath = normalizeRepoPath(repoPath);
+    if (!parsedRepoPath) {
+      throw new Error("Last opened repo path must be a non-empty string.");
+    }
+
+    this.store.set("lastOpenedRepoPath", parsedRepoPath);
+    return parsedRepoPath;
+  }
+
+  clearLastOpenedRepo() {
+    this.store.set("lastOpenedRepoPath", null);
+  }
+
+  loadAppSettings() {
+    const appSettings = this.store.get("appSettings");
+
+    if (appSettings === undefined) {
+      const defaults = makeDefaultAppSettings();
+      return this.saveAppSettings(defaults);
+    }
+
+    return appSettingsSchema.parse(appSettings);
+  }
+
+  saveAppSettings(settings) {
+    const parsedSettings = appSettingsSchema.parse(settings);
+    this.store.set("appSettings", parsedSettings);
+    return parsedSettings;
   }
 }
 
