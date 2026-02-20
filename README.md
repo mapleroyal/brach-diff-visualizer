@@ -11,12 +11,13 @@ Branch Diff Visualizer is a desktop Electron app for comparing two Git branches 
   - `merge-base`: compare the merge base to the compare branch
   - `tip-to-tip`: compare branch tips directly
 - Choose compare source:
-  - `working tree (saved changes)`: include saved, local edits on the checked out compare branch
+  - `working tree (saved changes)`: include saved local edits on the checked out compare branch
   - `branch tip (committed)`: use committed state only
 - Auto-refresh analysis when repository changes are detected
 - Visualize diff impact with charts and panels (status, churn, directories, extensions, histograms)
 - Configure ignore patterns to filter out noise
 - Save settings per repository (branch selection, mode, panel layout, orientation, ignore patterns)
+- Configure global app settings (theme + reopen last repository on launch)
 - Export analysis results to JSON
 
 ## Tech Stack
@@ -47,6 +48,12 @@ In the app:
 4. Tune ignore patterns as needed.
 5. Optionally export analysis via `Export JSON`.
 
+## Comparison Notes
+
+- `working-tree` compare source requires the currently checked out branch to match the selected compare branch.
+- `working-tree` includes saved local edits, while `branch-tip` only reflects committed history.
+- Ignore patterns are applied after diff collection and are persisted per repository.
+
 ## Scripts
 
 - `npm run dev`: run the app in development mode
@@ -54,7 +61,9 @@ In the app:
 - `npm run dist`: create distributables for configured platforms
 - `npm run dist:mac`: create macOS distributables (`.dmg`, `.zip`)
 - `npm run dist:mac:app`: create an unpacked macOS `.app` bundle
+- `npm run preview`: preview a built app
 - `npm run test`: run tests
+- `npm run test:watch`: run tests in watch mode
 - `npm run lint`: run lint checks
 - `npm run format`: run Prettier
 
