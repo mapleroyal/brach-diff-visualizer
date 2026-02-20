@@ -36,6 +36,11 @@ const analysisFixture = {
       { name: "Removed", value: 4, metric: "removed" },
       { name: "Net", value: 8, metric: "net" },
     ],
+    statusNetDeltaBars: [
+      { name: "Added", value: 4, metric: "added" },
+      { name: "Removed", value: -2, metric: "removed" },
+      { name: "Changed", value: 6, metric: "changed" },
+    ],
     fileTouchSegments: [
       {
         path: "src/App.tsx",

@@ -65,6 +65,11 @@ describe("aggregators", () => {
       { name: "Removed", value: 30, metric: "removed" },
       { name: "Net", value: 80, metric: "net" },
     ]);
+    expect(datasets.statusNetDeltaBars).toEqual([
+      { name: "Added", value: 80, metric: "added" },
+      { name: "Removed", value: -20, metric: "removed" },
+      { name: "Changed", value: 20, metric: "changed" },
+    ]);
     expect(datasets.fileTouchSegments).toEqual([
       {
         path: "src/App.tsx",

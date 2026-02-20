@@ -14,6 +14,13 @@ const PANEL_DEFINITIONS = [
     emptyStateLabel: "No line impact data.",
   },
   {
+    id: "statusNetDeltaBars",
+    title: "Status Net Delta Bars",
+    description: "Net line delta grouped by added, removed, and changed files.",
+    datasetKey: "statusNetDeltaBars",
+    emptyStateLabel: "No status net delta data.",
+  },
+  {
     id: "fileTouchSegments",
     title: "File Touch Segments",
     description: "Added and removed lines per touched file.",

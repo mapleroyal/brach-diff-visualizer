@@ -24,7 +24,7 @@ const sanitizeBranchForFilename = (value) =>
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 1500,
-    height: 1010,
+    height: 1040,
     minWidth: 1200,
     minHeight: 820,
     backgroundColor: "#020617",

@@ -35,6 +35,11 @@ const analysisFixture = {
       { name: "Removed", value: 4, metric: "removed" },
       { name: "Net", value: 8, metric: "net" },
     ],
+    statusNetDeltaBars: [
+      { name: "Added", value: 4, metric: "added" },
+      { name: "Removed", value: -2, metric: "removed" },
+      { name: "Changed", value: 6, metric: "changed" },
+    ],
     fileTouchSegments: [
       {
         path: "src/App.tsx",
@@ -156,6 +161,18 @@ describe("App interactions", () => {
       expect(screen.queryAllByText("File Touch Segments").length).toBe(1);
       expect(screen.queryAllByText("Line Impact Bars").length).toBe(2);
       expect(screen.queryAllByText("Top Files by Churn").length).toBe(2);
+    });
+  });
+
+  it("enables the status net delta chart option", async () => {
+    renderApp();
+
+    fireEvent.click(
+      screen.getByRole("switch", { name: /Status Net Delta Bars/i })
+    );
+
+    await waitFor(() => {
+      expect(screen.queryAllByText("Status Net Delta Bars").length).toBe(2);
     });
   });
 

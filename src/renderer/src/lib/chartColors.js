@@ -17,16 +17,16 @@ const resolveChartToken = (index) => {
 const resolveChartColor = (index) => resolveThemeColor(resolveChartToken(index));
 
 const chartSemanticColors = {
-  added: resolveThemeColor("chart-1"),
-  net: resolveThemeColor("chart-2"),
-  changed: resolveThemeColor("chart-3"),
-  neutral: resolveThemeColor("chart-4"),
+  added: resolveThemeColor("chart-2"),
   removed: resolveThemeColor("chart-5"),
+  net: resolveThemeColor("chart-4"),
+  changed: resolveThemeColor("chart-4"),
+  neutral: resolveThemeColor("chart-1"),
 };
 
 const fileTouchSegmentColors = {
-  added: resolveThemeColor("chart-2"),
-  removed: resolveThemeColor("chart-5"),
+  added: chartSemanticColors.added,
+  removed: chartSemanticColors.removed,
 };
 
 const chartUiColors = {
@@ -64,9 +64,9 @@ const buildTreemapColorScale = (segmentCount) => {
 
 const statCardToneClasses = {
   linesAdded: {
-    card: "border-chart-1/45 bg-chart-1/10",
-    icon: "text-chart-1",
-    value: "text-chart-1",
+    card: "border-chart-2/45 bg-chart-2/10",
+    icon: "text-chart-2",
+    value: "text-chart-2",
   },
   linesRemoved: {
     card: "border-chart-5/45 bg-chart-5/10",
@@ -74,19 +74,19 @@ const statCardToneClasses = {
     value: "text-chart-5",
   },
   linesNet: {
-    card: "border-chart-2/45 bg-chart-2/10",
-    icon: "text-chart-2",
-    value: "text-chart-2",
-  },
-  totalTouched: {
-    card: "border-chart-3/45 bg-chart-3/10",
-    icon: "text-chart-3",
-    value: "text-chart-3",
-  },
-  filesAdded: {
     card: "border-chart-4/45 bg-chart-4/10",
     icon: "text-chart-4",
     value: "text-chart-4",
+  },
+  totalTouched: {
+    card: "border-chart-1/45 bg-chart-1/10",
+    icon: "text-chart-1",
+    value: "text-chart-1",
+  },
+  filesAdded: {
+    card: "border-chart-2/45 bg-chart-2/10",
+    icon: "text-chart-2",
+    value: "text-chart-2",
   },
   filesRemoved: {
     card: "border-chart-5/45 bg-chart-5/10",
@@ -94,9 +94,9 @@ const statCardToneClasses = {
     value: "text-chart-5",
   },
   filesChanged: {
-    card: "border-chart-3/45 bg-chart-3/10",
-    icon: "text-chart-3",
-    value: "text-chart-3",
+    card: "border-chart-4/45 bg-chart-4/10",
+    icon: "text-chart-4",
+    value: "text-chart-4",
   },
 };
 

@@ -63,6 +63,22 @@ const buildDatasets = (files, summary) => {
     { name: "Removed", value: summary.linesRemoved, metric: "removed" },
     { name: "Net", value: summary.linesNet, metric: "net" },
   ];
+  const statusNetTotals = {
+    added: 0,
+    removed: 0,
+    changed: 0,
+  };
+
+  for (const file of files) {
+    const netDelta = file.added - file.removed;
+    statusNetTotals[file.status] += netDelta;
+  }
+
+  const statusNetDeltaBars = [
+    { name: "Added", value: statusNetTotals.added, metric: "added" },
+    { name: "Removed", value: statusNetTotals.removed, metric: "removed" },
+    { name: "Changed", value: statusNetTotals.changed, metric: "changed" },
+  ];
   const fileTouchSegments = [...files]
     .map((file) => ({
       path: file.path,
@@ -115,6 +131,7 @@ const buildDatasets = (files, summary) => {
   return {
     fileStatusDonut,
     lineImpactBars,
+    statusNetDeltaBars,
     fileTouchSegments,
     topFilesChurn,
     directoryTreemap,

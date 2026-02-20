@@ -4,6 +4,7 @@ import {
   Cell,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   Treemap,
@@ -21,11 +22,30 @@ import {
 } from "@renderer/lib/chartColors";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US").format(value);
+const formatSignedNumber = (value) => {
+  const normalized = Number(value) || 0;
+
+  if (normalized > 0) {
+    return `+${formatNumber(normalized)}`;
+  }
+
+  if (normalized < 0) {
+    return `-${formatNumber(Math.abs(normalized))}`;
+  }
+
+  return "0";
+};
 
 const lineImpactColors = {
   Added: chartSemanticColors.added,
   Removed: chartSemanticColors.removed,
   Net: chartSemanticColors.net,
+};
+
+const statusNetDeltaColors = {
+  Added: chartSemanticColors.added,
+  Removed: chartSemanticColors.removed,
+  Changed: chartSemanticColors.changed,
 };
 
 const fileStatusColors = {
@@ -251,6 +271,31 @@ const renderLineImpactBars = (data) => (
   </ResponsiveContainer>
 );
 
+const renderStatusNetDeltaBars = (data) => (
+  <ResponsiveContainer width="100%" height="100%">
+    <BarChart data={data}>
+      <XAxis dataKey="name" {...chartAxisProps} />
+      <YAxis
+        {...chartAxisProps}
+        tickFormatter={(value) => formatSignedNumber(value)}
+      />
+      <Tooltip
+        {...chartTooltipProps}
+        formatter={(value) => [formatSignedNumber(value), "Net Delta"]}
+      />
+      <ReferenceLine y={0} stroke={chartUiColors.border} />
+      <Bar dataKey="value">
+        {data.map((entry, index) => (
+          <Cell
+            key={`${entry.name}-${index}`}
+            fill={statusNetDeltaColors[entry.name] || resolveChartColor(index)}
+          />
+        ))}
+      </Bar>
+    </BarChart>
+  </ResponsiveContainer>
+);
+
 const renderFileTouchSegments = (data) =>
   renderScrollableFileChart(data, () => (
     <ResponsiveContainer width="100%" height="100%">
@@ -367,6 +412,7 @@ const renderChurnHistogram = (data) => (
 const PANEL_RENDERERS = {
   fileStatusDonut: renderFileStatusDonut,
   lineImpactBars: renderLineImpactBars,
+  statusNetDeltaBars: renderStatusNetDeltaBars,
   fileTouchSegments: renderFileTouchSegments,
   topFilesChurn: renderTopFilesChurn,
   directoryTreemap: renderDirectoryTreemap,
