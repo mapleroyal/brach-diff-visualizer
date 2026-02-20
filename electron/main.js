@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import simpleGit from "simple-git";
-import { runAnalysis } from "@main/git/gitAnalyzer";
+import { getAnalysisSignature, runAnalysis } from "@main/git/gitAnalyzer";
 import { settingsStore } from "@main/persistence/settingsStore";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const toSuccess = (data) => ({ ok: true, data });
@@ -97,6 +97,14 @@ app.whenReady().then(() => {
       return toError(error);
     }
   });
+  ipcMain.handle("analysis:getSignature", async (_event, request) => {
+    try {
+      const signature = await getAnalysisSignature(request);
+      return toSuccess(signature);
+    } catch (error) {
+      return toError(error);
+    }
+  });
   ipcMain.handle("analysis:exportJson", async (_event, payload) => {
     try {
       const suggestedName = `git-branch-analysis-${sanitizeBranchForFilename(payload.request.compareBranch)}-vs-${sanitizeBranchForFilename(payload.request.baseBranch)}-${createTimestamp()}.json`;
@@ -118,6 +126,7 @@ app.whenReady().then(() => {
           baseBranch: payload.request.baseBranch,
           compareBranch: payload.request.compareBranch,
           mode: payload.request.mode,
+          compareSource: payload.request.compareSource,
           ignorePatterns: payload.request.ignorePatterns,
         },
         resolvedRefs: payload.result.resolvedRefs,

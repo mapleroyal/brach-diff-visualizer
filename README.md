@@ -9,6 +9,10 @@ Branch Diff Visualizer is a desktop Electron app for comparing two Git branches 
 - Compare branches in two modes:
   - `merge-base`: compare the merge base to the compare branch
   - `tip-to-tip`: compare branch tips directly
+- Choose compare source:
+  - `working tree (saved changes)`: include saved, local edits on the checked out compare branch
+  - `branch tip (committed)`: use committed state only
+- Auto-refresh analysis when repository changes are detected
 - Visualize diff impact with charts and panels (status, churn, directories, extensions, histograms)
 - Configure ignore patterns to filter out noise
 - Save settings per repository (branch selection, mode, panel layout, orientation, ignore patterns)

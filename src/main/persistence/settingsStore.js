@@ -6,13 +6,18 @@ import {
   PANEL_IDS,
   isValidCanvasOrientation,
 } from "@shared/types";
+import {
+  DEFAULT_ANALYSIS_MODE,
+  DEFAULT_COMPARE_SOURCE,
+  isValidAnalysisMode,
+  isValidCompareSource,
+} from "@shared/analysisOptions";
 import { DEFAULT_IGNORE_PATTERNS } from "@shared/defaultIgnorePatterns";
-
-const ANALYSIS_MODES = ["merge-base", "tip-to-tip"];
 
 const makeDefaultSettings = () => ({
   ignorePatterns: [...DEFAULT_IGNORE_PATTERNS],
-  mode: ANALYSIS_MODES[0],
+  mode: DEFAULT_ANALYSIS_MODE,
+  compareSource: DEFAULT_COMPARE_SOURCE,
   baseBranch: "",
   compareBranch: "",
   panelOrder: [...DEFAULT_ACTIVE_PANELS],
@@ -48,11 +53,19 @@ const sanitizeIgnorePatterns = (input) => {
 };
 
 const sanitizeMode = (value) => {
-  if (ANALYSIS_MODES.includes(value)) {
+  if (isValidAnalysisMode(value)) {
     return value;
   }
 
-  return ANALYSIS_MODES[0];
+  return DEFAULT_ANALYSIS_MODE;
+};
+
+const sanitizeCompareSource = (value) => {
+  if (isValidCompareSource(value)) {
+    return value;
+  }
+
+  return DEFAULT_COMPARE_SOURCE;
 };
 
 const ensureSettings = (settings) => {
@@ -65,6 +78,7 @@ const ensureSettings = (settings) => {
   return {
     ignorePatterns: sanitizeIgnorePatterns(settings.ignorePatterns),
     mode: sanitizeMode(settings.mode),
+    compareSource: sanitizeCompareSource(settings.compareSource),
     baseBranch:
       typeof settings.baseBranch === "string" ? settings.baseBranch : "",
     compareBranch:

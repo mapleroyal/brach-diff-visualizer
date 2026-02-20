@@ -12,6 +12,7 @@ const analysisFixture = {
   resolvedRefs: {
     leftRef: "main",
     rightRef: "feature",
+    compareSource: "working-tree",
   },
   summary: {
     linesAdded: 12,
@@ -63,6 +64,7 @@ const analysisFixture = {
 const defaultSettings = {
   ignorePatterns: ["node_modules/**"],
   mode: "merge-base",
+  compareSource: "working-tree",
   baseBranch: "main",
   compareBranch: "feature",
   panelOrder: ["fileTouchSegments", "lineImpactBars"],
@@ -75,6 +77,7 @@ const makeApi = (overrides = {}) => ({
     .fn()
     .mockResolvedValue({ ok: true, data: ["main", "feature"] }),
   runAnalysis: vi.fn().mockResolvedValue({ ok: true, data: analysisFixture }),
+  getAnalysisSignature: vi.fn().mockResolvedValue({ ok: true, data: "stable" }),
   exportJson: vi.fn().mockResolvedValue({ ok: true, data: "/tmp/export.json" }),
   loadSettingsForRepo: vi.fn().mockResolvedValue({
     ok: true,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
   FolderOpen,
@@ -11,6 +11,10 @@ import {
   DEFAULT_CANVAS_ORIENTATION,
   MAX_ACTIVE_PANELS,
 } from "@shared/types";
+import {
+  DEFAULT_ANALYSIS_MODE,
+  DEFAULT_COMPARE_SOURCE,
+} from "@shared/analysisOptions";
 import { DEFAULT_IGNORE_PATTERNS } from "@shared/defaultIgnorePatterns";
 import { Alert, AlertDescription } from "@renderer/components/ui/alert";
 import { Button } from "@renderer/components/ui/button";
@@ -25,11 +29,15 @@ import {
   SelectValue,
 } from "@renderer/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@renderer/components/ui/tabs";
+import { AnalysisSettingsDialog } from "@renderer/components/dashboard/AnalysisSettingsDialog";
 import { IgnorePatternsDialog } from "@renderer/components/dashboard/IgnorePatternsDialog";
 import { ReplacePanelDialog } from "@renderer/components/dashboard/ReplacePanelDialog";
 import { StatCards } from "@renderer/components/dashboard/StatCards";
 import { VisualizationToggleRail } from "@renderer/components/dashboard/VisualizationToggleRail";
 import { SnapCanvas } from "@renderer/components/canvas/SnapCanvas";
+
+const REPO_PLACEHOLDER = "Pick local repository";
+const AUTO_REFRESH_INTERVAL_MS = 1000;
 
 const resolveDefaultBaseBranch = (branches) => {
   if (branches.includes("main")) {
@@ -60,12 +68,23 @@ const resolveBranchSelection = (branches, preferredBase, preferredCompare) => {
   return { baseBranch, compareBranch };
 };
 
+const getRepoName = (repoPath) => {
+  if (!repoPath) {
+    return "";
+  }
+
+  const normalized = repoPath.replace(/\\/g, "/").replace(/\/+$/, "");
+  const segments = normalized.split("/").filter(Boolean);
+  return segments[segments.length - 1] || normalized;
+};
+
 const App = () => {
   const [repoPath, setRepoPath] = useState("");
   const [branches, setBranches] = useState([]);
   const [baseBranch, setBaseBranch] = useState("");
   const [compareBranch, setCompareBranch] = useState("");
-  const [mode, setMode] = useState("merge-base");
+  const [mode, setMode] = useState(DEFAULT_ANALYSIS_MODE);
+  const [compareSource, setCompareSource] = useState(DEFAULT_COMPARE_SOURCE);
   const [ignorePatterns, setIgnorePatterns] = useState([
     ...DEFAULT_IGNORE_PATTERNS,
   ]);
@@ -76,9 +95,18 @@ const App = () => {
   );
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [ignoreDialogOpen, setIgnoreDialogOpen] = useState(false);
   const [pendingPanelToAdd, setPendingPanelToAdd] = useState(null);
   const [settingsHydrated, setSettingsHydrated] = useState(false);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  const analysisSignatureRef = useRef(null);
+
+  const repoName = useMemo(() => getRepoName(repoPath), [repoPath]);
+  const repoDisplayWidth = useMemo(() => {
+    const source = repoName || REPO_PLACEHOLDER;
+    return `${source.length + 2}ch`;
+  }, [repoName]);
 
   const analysisRequest = useMemo(() => {
     if (!repoPath || !baseBranch || !compareBranch) {
@@ -90,9 +118,17 @@ const App = () => {
       baseBranch,
       compareBranch,
       mode,
+      compareSource,
       ignorePatterns,
     };
-  }, [repoPath, baseBranch, compareBranch, mode, ignorePatterns]);
+  }, [
+    repoPath,
+    baseBranch,
+    compareBranch,
+    mode,
+    compareSource,
+    ignorePatterns,
+  ]);
 
   const saveSettings = useCallback(async (currentRepoPath, settings) => {
     const response = await window.api.saveSettingsForRepo(
@@ -113,6 +149,7 @@ const App = () => {
     void saveSettings(repoPath, {
       ignorePatterns,
       mode,
+      compareSource,
       baseBranch,
       compareBranch,
       panelOrder: [...panelOrder],
@@ -123,6 +160,7 @@ const App = () => {
     settingsHydrated,
     ignorePatterns,
     mode,
+    compareSource,
     baseBranch,
     compareBranch,
     panelOrder,
@@ -156,6 +194,7 @@ const App = () => {
     setRepoPath(path);
     setBranches(availableBranches);
     setMode(settings.mode);
+    setCompareSource(settings.compareSource);
     setIgnorePatterns(settings.ignorePatterns);
     setPanelOrder(settings.panelOrder.slice(0, MAX_ACTIVE_PANELS));
     setCanvasOrientation(
@@ -172,6 +211,55 @@ const App = () => {
     setCompareBranch(resolvedBranches.compareBranch);
     setSettingsHydrated(true);
   }, []);
+
+  useEffect(() => {
+    analysisSignatureRef.current = null;
+
+    if (!analysisRequest || !settingsHydrated) {
+      return;
+    }
+
+    let cancelled = false;
+    let isPolling = false;
+
+    const pollSignature = async () => {
+      if (isPolling) {
+        return;
+      }
+
+      isPolling = true;
+      const response = await window.api.getAnalysisSignature(analysisRequest);
+      isPolling = false;
+
+      if (cancelled || !response.ok) {
+        return;
+      }
+
+      const signature = response.data;
+
+      if (analysisSignatureRef.current === null) {
+        analysisSignatureRef.current = signature;
+        return;
+      }
+
+      if (analysisSignatureRef.current !== signature) {
+        analysisSignatureRef.current = signature;
+        setRefreshCounter((current) => current + 1);
+      }
+    };
+
+    void pollSignature();
+
+    const intervalId = window.setInterval(
+      () => void pollSignature(),
+      AUTO_REFRESH_INTERVAL_MS
+    );
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [analysisRequest, settingsHydrated]);
 
   useEffect(() => {
     if (!analysisRequest || !settingsHydrated) {
@@ -210,7 +298,7 @@ const App = () => {
     return () => {
       cancelled = true;
     };
-  }, [analysisRequest, settingsHydrated]);
+  }, [analysisRequest, settingsHydrated, refreshCounter]);
 
   const handlePickRepo = async () => {
     const response = await window.api.pickRepo();
@@ -253,6 +341,11 @@ const App = () => {
     if (response.data) {
       setError(`JSON exported to ${response.data}`);
     }
+  };
+
+  const handleOpenIgnorePatterns = () => {
+    setSettingsDialogOpen(false);
+    setIgnoreDialogOpen(true);
   };
 
   const handleTogglePanel = (panelId) => {
@@ -299,9 +392,12 @@ const App = () => {
               </Button>
               <Input
                 id="repository-path"
-                value={repoPath}
-                placeholder="Pick local repository"
+                value={repoName}
+                placeholder={REPO_PLACEHOLDER}
+                title={repoPath || undefined}
                 readOnly
+                className="w-auto"
+                style={{ width: repoDisplayWidth }}
               />
               <Button
                 type="button"
@@ -375,11 +471,11 @@ const App = () => {
           <div className="flex flex-col gap-2 xl:justify-self-end">
             <Button
               variant="secondary"
-              onClick={() => setIgnoreDialogOpen(true)}
+              onClick={() => setSettingsDialogOpen(true)}
               className="gap-2"
             >
               <Settings2 size={15} />
-              Ignore Patterns
+              Settings
             </Button>
             <Button
               variant="secondary"
@@ -414,6 +510,14 @@ const App = () => {
           onOrientationChange={setCanvasOrientation}
         />
       </section>
+
+      <AnalysisSettingsDialog
+        open={settingsDialogOpen}
+        compareSource={compareSource}
+        onCompareSourceChange={setCompareSource}
+        onEditIgnorePatterns={handleOpenIgnorePatterns}
+        onClose={() => setSettingsDialogOpen(false)}
+      />
 
       <IgnorePatternsDialog
         open={ignoreDialogOpen}
