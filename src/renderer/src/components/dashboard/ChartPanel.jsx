@@ -169,6 +169,12 @@ const donutChartGeometry = {
 };
 
 const FILE_CHART_MIN_ROW_HEIGHT = 28;
+const CHART_ANIMATION_DURATION_MS = 667;
+
+const chartAnimationProps = {
+  isAnimationActive: true,
+  animationDuration: CHART_ANIMATION_DURATION_MS,
+};
 
 const chartAxisProps = {
   axisLine: { stroke: chartUiColors.border },
@@ -236,6 +242,7 @@ const renderFileStatusDonut = (data) => (
         nameKey="name"
         innerRadius="56%"
         {...donutChartGeometry}
+        {...chartAnimationProps}
         stroke={chartUiColors.border}
       >
         {data.map((entry, index) => (
@@ -259,7 +266,7 @@ const renderLineImpactBars = (data) => (
         {...chartTooltipProps}
         formatter={(value) => formatNumber(value)}
       />
-      <Bar dataKey="value">
+      <Bar dataKey="value" {...chartAnimationProps}>
         {data.map((entry, index) => (
           <Cell
             key={`${entry.name}-${index}`}
@@ -284,7 +291,7 @@ const renderStatusNetDeltaBars = (data) => (
         formatter={(value) => [formatSignedNumber(value), "Net Delta"]}
       />
       <ReferenceLine y={0} stroke={chartUiColors.border} />
-      <Bar dataKey="value">
+      <Bar dataKey="value" {...chartAnimationProps}>
         {data.map((entry, index) => (
           <Cell
             key={`${entry.name}-${index}`}
@@ -313,11 +320,13 @@ const renderFileTouchSegments = (data) =>
           dataKey="removed"
           stackId="lines"
           fill={fileTouchSegmentColors.removed}
+          {...chartAnimationProps}
         />
         <Bar
           dataKey="added"
           stackId="lines"
           fill={fileTouchSegmentColors.added}
+          {...chartAnimationProps}
         />
       </BarChart>
     </ResponsiveContainer>
@@ -330,7 +339,7 @@ const renderTopFilesChurn = (data) =>
         <XAxis type="number" {...chartAxisProps} />
         <YAxis {...filePathYAxisProps} {...chartAxisProps} />
         <Tooltip {...chartTooltipProps} />
-        <Bar dataKey="churn">
+        <Bar dataKey="churn" {...chartAnimationProps}>
           {data.map((entry, index) => (
             <Cell
               key={`${entry.path}-${index}`}
@@ -353,6 +362,7 @@ const renderDirectoryTreemap = (data) => {
         dataKey="size"
         nameKey="name"
         colorPanel={colorPanel}
+        {...chartAnimationProps}
         stroke={chartUiColors.border}
         content={renderTreemapNode}
       >
@@ -377,6 +387,7 @@ const renderExtensionBreakdown = (data) => (
         nameKey="name"
         innerRadius="52%"
         {...donutChartGeometry}
+        {...chartAnimationProps}
         stroke={chartUiColors.border}
       >
         {data.map((entry, index) => (
@@ -397,7 +408,7 @@ const renderChurnHistogram = (data) => (
       <XAxis dataKey="bucket" {...chartAxisProps} />
       <YAxis {...chartAxisProps} />
       <Tooltip {...chartTooltipProps} />
-      <Bar dataKey="count">
+      <Bar dataKey="count" {...chartAnimationProps}>
         {data.map((entry, index) => (
           <Cell
             key={`${entry.bucket}-${index}`}
