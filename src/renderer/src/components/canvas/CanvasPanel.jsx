@@ -46,9 +46,7 @@ const CanvasPanel = forwardRef(({ panel, definition, analysis }, ref) => {
         </CardHeader>
 
         <CardContent className="min-h-0 flex-1 p-2">
-          <div className="h-full rounded-lg border p-1">
-            <ChartPanel panelId={panel.id} analysis={analysis} />
-          </div>
+          <ChartPanel panelId={panel.id} analysis={analysis} />
         </CardContent>
       </Card>
     </motion.div>
