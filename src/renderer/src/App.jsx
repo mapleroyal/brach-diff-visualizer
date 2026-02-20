@@ -38,6 +38,35 @@ import { SnapCanvas } from "@renderer/components/canvas/SnapCanvas";
 const REPO_PLACEHOLDER = "Pick local repository";
 const AUTO_REFRESH_INTERVAL_MS = 1000;
 
+const BranchSelectField = ({
+  id,
+  label,
+  value,
+  onValueChange,
+  branches,
+  placeholder,
+}) => (
+  <div className="space-y-2">
+    <Label htmlFor={id}>{label}</Label>
+    <Select
+      value={value}
+      onValueChange={onValueChange}
+      disabled={branches.length === 0}
+    >
+      <SelectTrigger id={id}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {branches.map((branch) => (
+          <SelectItem key={branch} value={branch}>
+            {branch}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  </div>
+);
+
 const resolveDefaultBaseBranch = (branches) => {
   if (branches.includes("main")) {
     return "main";
@@ -93,6 +122,7 @@ const App = () => {
     DEFAULT_CANVAS_ORIENTATION
   );
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [ignoreDialogOpen, setIgnoreDialogOpen] = useState(false);
@@ -128,16 +158,29 @@ const App = () => {
     ignorePatterns,
   ]);
 
-  const saveSettings = useCallback(async (currentRepoPath, settings) => {
-    const response = await window.api.saveSettingsForRepo(
-      currentRepoPath,
-      settings
-    );
-
-    if (!response.ok) {
-      setError(response.error);
-    }
+  const setAppError = useCallback((message) => {
+    setNotice(null);
+    setError(message);
   }, []);
+
+  const setAppNotice = useCallback((message) => {
+    setError(null);
+    setNotice(message);
+  }, []);
+
+  const saveSettings = useCallback(
+    async (currentRepoPath, settings) => {
+      const response = await window.api.saveSettingsForRepo(
+        currentRepoPath,
+        settings
+      );
+
+      if (!response.ok) {
+        setAppError(response.error);
+      }
+    },
+    [setAppError]
+  );
 
   useEffect(() => {
     if (!repoPath || !settingsHydrated) {
@@ -166,49 +209,53 @@ const App = () => {
     saveSettings,
   ]);
 
-  const loadRepoContext = useCallback(async (path) => {
-    setSettingsHydrated(false);
-    setError(null);
-    setAnalysis(undefined);
+  const loadRepoContext = useCallback(
+    async (path) => {
+      setSettingsHydrated(false);
+      setError(null);
+      setNotice(null);
+      setAnalysis(undefined);
 
-    const [branchResponse, settingsResponse] = await Promise.all([
-      window.api.listBranches(path),
-      window.api.loadSettingsForRepo(path),
-    ]);
+      const [branchResponse, settingsResponse] = await Promise.all([
+        window.api.listBranches(path),
+        window.api.loadSettingsForRepo(path),
+      ]);
 
-    if (!branchResponse.ok) {
-      setError(branchResponse.error);
-      return;
-    }
+      if (!branchResponse.ok) {
+        setAppError(branchResponse.error);
+        return;
+      }
 
-    if (!settingsResponse.ok) {
-      setError(settingsResponse.error);
-      return;
-    }
+      if (!settingsResponse.ok) {
+        setAppError(settingsResponse.error);
+        return;
+      }
 
-    const availableBranches = branchResponse.data;
-    const settings = settingsResponse.data;
+      const availableBranches = branchResponse.data;
+      const settings = settingsResponse.data;
 
-    setRepoPath(path);
-    setBranches(availableBranches);
-    setMode(settings.mode);
-    setCompareSource(settings.compareSource);
-    setIgnorePatterns(settings.ignorePatterns);
-    setPanelOrder(settings.panelOrder.slice(0, MAX_ACTIVE_PANELS));
-    setCanvasOrientation(
-      settings.canvasOrientation || DEFAULT_CANVAS_ORIENTATION
-    );
+      setRepoPath(path);
+      setBranches(availableBranches);
+      setMode(settings.mode);
+      setCompareSource(settings.compareSource);
+      setIgnorePatterns(settings.ignorePatterns);
+      setPanelOrder(settings.panelOrder.slice(0, MAX_ACTIVE_PANELS));
+      setCanvasOrientation(
+        settings.canvasOrientation || DEFAULT_CANVAS_ORIENTATION
+      );
 
-    const resolvedBranches = resolveBranchSelection(
-      availableBranches,
-      settings.baseBranch,
-      settings.compareBranch
-    );
+      const resolvedBranches = resolveBranchSelection(
+        availableBranches,
+        settings.baseBranch,
+        settings.compareBranch
+      );
 
-    setBaseBranch(resolvedBranches.baseBranch);
-    setCompareBranch(resolvedBranches.compareBranch);
-    setSettingsHydrated(true);
-  }, []);
+      setBaseBranch(resolvedBranches.baseBranch);
+      setCompareBranch(resolvedBranches.compareBranch);
+      setSettingsHydrated(true);
+    },
+    [setAppError]
+  );
 
   useEffect(() => {
     analysisSignatureRef.current = null;
@@ -273,6 +320,7 @@ const App = () => {
     const run = async () => {
       setIsLoading(true);
       setError(null);
+      setNotice(null);
 
       const response = await window.api.runAnalysis(analysisRequest);
 
@@ -284,7 +332,7 @@ const App = () => {
 
       if (!response.ok) {
         setAnalysis(undefined);
-        setError(response.error);
+        setAppError(response.error);
         return;
       }
 
@@ -296,13 +344,13 @@ const App = () => {
     return () => {
       cancelled = true;
     };
-  }, [analysisRequest, settingsHydrated, refreshCounter]);
+  }, [analysisRequest, settingsHydrated, refreshCounter, setAppError]);
 
   const handlePickRepo = async () => {
     const response = await window.api.pickRepo();
 
     if (!response.ok) {
-      setError(response.error);
+      setAppError(response.error);
       return;
     }
 
@@ -332,12 +380,12 @@ const App = () => {
     });
 
     if (!response.ok) {
-      setError(response.error);
+      setAppError(response.error);
       return;
     }
 
     if (response.data) {
-      setError(`JSON exported to ${response.data}`);
+      setAppNotice(`JSON exported to ${response.data}`);
     }
   };
 
@@ -397,45 +445,23 @@ const App = () => {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="base-branch">Base Branch</Label>
-            <Select
-              value={baseBranch}
-              onValueChange={setBaseBranch}
-              disabled={branches.length === 0}
-            >
-              <SelectTrigger id="base-branch">
-                <SelectValue placeholder="Select base branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch} value={branch}>
-                    {branch}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <BranchSelectField
+            id="base-branch"
+            label="Base Branch"
+            value={baseBranch}
+            onValueChange={setBaseBranch}
+            branches={branches}
+            placeholder="Select base branch"
+          />
 
-          <div className="space-y-2">
-            <Label htmlFor="compare-branch">Compare Branch</Label>
-            <Select
-              value={compareBranch}
-              onValueChange={setCompareBranch}
-              disabled={branches.length === 0}
-            >
-              <SelectTrigger id="compare-branch">
-                <SelectValue placeholder="Select compare branch" />
-              </SelectTrigger>
-              <SelectContent>
-                {branches.map((branch) => (
-                  <SelectItem key={branch} value={branch}>
-                    {branch}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <BranchSelectField
+            id="compare-branch"
+            label="Compare Branch"
+            value={compareBranch}
+            onValueChange={setCompareBranch}
+            branches={branches}
+            placeholder="Select compare branch"
+          />
 
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -488,6 +514,12 @@ const App = () => {
       {error ? (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {!error && notice ? (
+        <Alert>
+          <AlertDescription>{notice}</AlertDescription>
         </Alert>
       ) : null}
 

@@ -13,6 +13,7 @@ import {
   getExtension,
   statusCodeToFileStatus,
 } from "./aggregators";
+import { normalizeRepoPath } from "./pathUtils";
 import { parseNameStatus, parseNumstat } from "./parsers";
 const analysisRequestSchema = z.object({
   repoPath: z.string().min(1),
@@ -22,7 +23,6 @@ const analysisRequestSchema = z.object({
   compareSource: z.enum(COMPARE_SOURCES).default(DEFAULT_COMPARE_SOURCE),
   ignorePatterns: z.array(z.string().min(1)),
 });
-const normalizePath = (value) => value.replace(/\\/g, "/").replace(/^\.\//, "");
 const matchesIgnorePattern = (normalizedPath, pattern) => {
   const options = {
     dot: true,
@@ -50,7 +50,7 @@ const matchesIgnorePattern = (normalizedPath, pattern) => {
   return false;
 };
 const shouldIgnoreFile = (relativePath, ignorePatterns) => {
-  const normalizedPath = normalizePath(relativePath);
+  const normalizedPath = normalizeRepoPath(relativePath);
   return ignorePatterns.some((pattern) =>
     matchesIgnorePattern(normalizedPath, pattern)
   );

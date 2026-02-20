@@ -9,8 +9,7 @@ import {
 } from "lucide-react";
 import { Card } from "@renderer/components/ui/card";
 import { statCardToneClasses } from "@renderer/lib/chartColors";
-
-const formatNumber = (value) => new Intl.NumberFormat("en-US").format(value);
+import { formatNumber } from "@renderer/lib/numberFormat";
 
 const statItems = [
   {

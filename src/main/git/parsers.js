@@ -1,8 +1,4 @@
-import { posix } from "node:path";
-const normalizePath = (value) => {
-  const normalized = value.replace(/\\/g, "/").replace(/^\.\//, "");
-  return posix.normalize(normalized);
-};
+import { normalizeRepoPath } from "./pathUtils";
 const parseNumstat = (output) => {
   const rows = [];
   for (const line of output.split("\n")) {
@@ -21,8 +17,8 @@ const parseNumstat = (output) => {
     const binary = addedRaw === "-" || removedRaw === "-";
     const previousPath = pathParts.length > 1 ? pathParts[0] : void 0;
     rows.push({
-      path: normalizePath(path),
-      previousPath: previousPath ? normalizePath(previousPath) : void 0,
+      path: normalizeRepoPath(path),
+      previousPath: previousPath ? normalizeRepoPath(previousPath) : void 0,
       added: binary ? 0 : Number.parseInt(addedRaw, 10) || 0,
       removed: binary ? 0 : Number.parseInt(removedRaw, 10) || 0,
       binary,
@@ -48,8 +44,8 @@ const parseNameStatus = (output) => {
       continue;
     }
     rows.push({
-      path: normalizePath(path),
-      previousPath: previousPath ? normalizePath(previousPath) : void 0,
+      path: normalizeRepoPath(path),
+      previousPath: previousPath ? normalizeRepoPath(previousPath) : void 0,
       statusCode,
     });
   }

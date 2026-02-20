@@ -20,21 +20,7 @@ import {
   resolveChartColor,
   resolveColorWithAlpha,
 } from "@renderer/lib/chartColors";
-
-const formatNumber = (value) => new Intl.NumberFormat("en-US").format(value);
-const formatSignedNumber = (value) => {
-  const normalized = Number(value) || 0;
-
-  if (normalized > 0) {
-    return `+${formatNumber(normalized)}`;
-  }
-
-  if (normalized < 0) {
-    return `-${formatNumber(Math.abs(normalized))}`;
-  }
-
-  return "0";
-};
+import { formatNumber, formatSignedNumber } from "@renderer/lib/numberFormat";
 
 const lineImpactColors = {
   Added: chartSemanticColors.added,
