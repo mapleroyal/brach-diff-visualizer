@@ -141,17 +141,21 @@ describe("App interactions", () => {
     });
   });
 
-  it("shows replacement modal when enabling a 3rd chart", async () => {
+  it("replaces the left visualization when enabling a 3rd chart", async () => {
     renderApp();
+
+    expect(screen.queryAllByText("File Touch Segments").length).toBe(2);
+    expect(screen.queryAllByText("Line Impact Bars").length).toBe(2);
 
     fireEvent.click(
       screen.getByRole("switch", { name: /Top Files by Churn/i })
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Replace Active Visualization")
-      ).toBeInTheDocument();
+      expect(screen.queryByText("Replace Active Visualization")).toBeNull();
+      expect(screen.queryAllByText("File Touch Segments").length).toBe(1);
+      expect(screen.queryAllByText("Line Impact Bars").length).toBe(2);
+      expect(screen.queryAllByText("Top Files by Churn").length).toBe(2);
     });
   });
 

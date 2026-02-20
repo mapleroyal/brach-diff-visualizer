@@ -31,7 +31,6 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@renderer/components/ui/tabs";
 import { AnalysisSettingsDialog } from "@renderer/components/dashboard/AnalysisSettingsDialog";
 import { IgnorePatternsDialog } from "@renderer/components/dashboard/IgnorePatternsDialog";
-import { ReplacePanelDialog } from "@renderer/components/dashboard/ReplacePanelDialog";
 import { StatCards } from "@renderer/components/dashboard/StatCards";
 import { VisualizationToggleRail } from "@renderer/components/dashboard/VisualizationToggleRail";
 import { SnapCanvas } from "@renderer/components/canvas/SnapCanvas";
@@ -97,7 +96,6 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [ignoreDialogOpen, setIgnoreDialogOpen] = useState(false);
-  const [pendingPanelToAdd, setPendingPanelToAdd] = useState(null);
   const [settingsHydrated, setSettingsHydrated] = useState(false);
   const [refreshCounter, setRefreshCounter] = useState(0);
   const analysisSignatureRef = useRef(null);
@@ -354,23 +352,11 @@ const App = () => {
       }
 
       if (current.length >= MAX_ACTIVE_PANELS) {
-        setPendingPanelToAdd(panelId);
-        return current;
+        return [...current.slice(1), panelId];
       }
 
       return [...current, panelId];
     });
-  };
-
-  const handleReplacePanel = (panelToReplace) => {
-    if (!pendingPanelToAdd) {
-      return;
-    }
-
-    setPanelOrder((current) =>
-      current.map((id) => (id === panelToReplace ? pendingPanelToAdd : id))
-    );
-    setPendingPanelToAdd(null);
   };
 
   return (
@@ -452,19 +438,27 @@ const App = () => {
           </div>
 
           <div className="space-y-2">
-            <Label>Mode</Label>
+            <div className="flex items-center gap-2">
+              <Label>Mode</Label>
+              <span
+                className="inline-flex h-4 w-4 items-center justify-center text-muted-foreground"
+                role="status"
+                aria-live="polite"
+                aria-label={
+                  isLoading ? "Refreshing comparison" : "Comparison ready"
+                }
+              >
+                {isLoading ? (
+                  <LoaderCircle size={12} className="animate-spin" />
+                ) : null}
+              </span>
+            </div>
             <Tabs value={mode} onValueChange={setMode}>
               <TabsList>
                 <TabsTrigger value="merge-base">Merge Base</TabsTrigger>
                 <TabsTrigger value="tip-to-tip">Tip to Tip</TabsTrigger>
               </TabsList>
             </Tabs>
-            {isLoading ? (
-              <div className="mt-2 inline-flex items-center gap-2 text-xs text-muted-foreground">
-                <LoaderCircle size={12} className="animate-spin" />
-                Refreshing comparison...
-              </div>
-            ) : null}
           </div>
 
           <div className="flex flex-col gap-2 xl:justify-self-end">
@@ -523,14 +517,6 @@ const App = () => {
         initialPatterns={ignorePatterns}
         onClose={() => setIgnoreDialogOpen(false)}
         onSave={setIgnorePatterns}
-      />
-
-      <ReplacePanelDialog
-        open={pendingPanelToAdd !== null}
-        pendingPanel={pendingPanelToAdd}
-        activePanels={panelOrder}
-        onCancel={() => setPendingPanelToAdd(null)}
-        onChooseReplacement={handleReplacePanel}
       />
     </main>
   );
